@@ -1,0 +1,12 @@
+.dashboard-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-card {
+    width: 100%;
+  }
+}

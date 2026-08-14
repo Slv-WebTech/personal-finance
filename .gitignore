@@ -1,0 +1,8 @@
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+
+# Each app manages its own node_modules/dist/.env — see client/.gitignore and server/.gitignore
