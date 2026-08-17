@@ -17,12 +17,13 @@ None active. Awaiting direction to start Phase 2 (Account Management CRUD).
 - 2026-08-14: Documentation baseline (`/docs` structure), Phase 0 scaffolding (client + server, verified runnable), git init + initial commit, local MongoDB via Docker. See prior entries in this file's git history / `CHANGELOG.md` for detail.
 - 2026-08-17: **Documentation sync pass** — user asked to update all docs with current status before further coding. Re-read every `/docs` file and fixed 16 stale "no code exists yet" / "not yet provisioned" claims left over from before the git/MongoDB session.
 - 2026-08-17: Completed **Phase 1 — Authentication**: `User` Mongoose model, bcrypt password hashing, JWT sign/verify (7-day expiry), zod request validation, `requireAuth`/`requireRole` middleware, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`. Split `server/src/app.ts` (Express app factory) out of `server.ts` so tests can import the app without starting a real listener/DB connection. Added Vitest + Supertest (switched from the originally-planned Jest — see `DECISIONS.md`); 10 tests passing (unit: password/JWT; integration: register/login/me against a dedicated `personal-finance-test` database). Manually smoke-tested the full flow against the real dev database via curl (test user cleaned up after). Full doc sync for Phase 1 across `PROJECT_PLAN.md`, `IMPLEMENTED_FEATURES.md`, `FEATURES.md`, `API_DOCUMENTATION.md`, `DATABASE.md`, `ARCHITECTURE.md`, `TESTING.md`, `TECHNICAL_DEBT.md`, `PROJECT_SCORE.md` (2/10 → 3/10), `DECISIONS.md`.
+- 2026-08-17: Committed the doc-sync pass + Phase 1 together, then pushed to a new **private GitHub repo** `Slv-WebTech/personal-finance` over the `github-personal` SSH host alias. Caught (via GitHub's contributor view) that both commits carried the machine's global work git identity instead of the personal account — fixed by setting a repo-local identity and rewriting both commits (`git commit-tree`, content verified identical via empty diff) + `git push --force-with-lease`. See `DEPLOYMENT.md`'s "Source control" section and `DECISIONS.md`.
 
 ## Files recently changed
 - New (Phase 1): `server/src/models/User.ts`, `server/src/utils/password.ts`, `server/src/utils/jwt.ts`, `server/src/utils/validators.ts`, `server/src/middleware/validate.ts`, `server/src/middleware/auth.ts`, `server/src/controllers/auth.controller.ts`, `server/src/routes/auth.routes.ts`, `server/src/app.ts`, `server/src/utils/password.test.ts`, `server/src/utils/jwt.test.ts`, `server/src/routes/auth.routes.test.ts`, `server/vitest.config.ts`, `server/vitest.setup.ts`.
 - Modified: `server/src/server.ts` (now just bootstraps `createApp()` + DB connection), `server/package.json` (added `test` script + new deps: `bcrypt`, `jsonwebtoken`, `zod`, `vitest`, `supertest`).
-- Docs: see the two 2026-08-17 `CHANGELOG.md` entries for the full list — doc-sync pass touched 16 files, Phase 1 touched 10.
-- **Not yet committed to git**: everything from the doc-sync pass and Phase 1 (git status shows the repo has real uncommitted work — see "Next recommended action").
+- Docs: see the 2026-08-17 `CHANGELOG.md` entries for the full list.
+- **Git state: everything is committed and pushed.** Working tree is clean. `origin/master` is up to date. Two commits total (`c7374f6` docs+Phase0, `8d2405a` doc-sync+Phase1), both authored as `Slv-WebTech`.
 
 ## Important implementation details
 - Stack is locked: MongoDB + Mongoose, TypeScript (client + server), Vite (frontend build), npm, Recharts (primary charts), axios (HTTP client). See `DECISIONS.md`.
@@ -33,6 +34,8 @@ None active. Awaiting direction to start Phase 2 (Account Management CRUD).
 - JWT expiry is 7 days, no refresh-token flow. `requireRole` exists in `middleware/auth.ts` but has no caller yet — expected to be used starting Phase 2 (ownership checks) or wherever an admin-only route first appears.
 - Real MongoDB connection is verified working end-to-end for both the dev database (`personal-finance`) and a separate test database (`personal-finance-test`, used only by the Vitest integration suite, dropped after each run).
 - Local MongoDB container `personal-finance-mongo` is expected to already be running (`docker compose up -d` if not — check with `docker ps`).
+- **Git identity for this repo is set locally (not global)** to `Slv-WebTech <70682890+Slv-WebTech@users.noreply.github.com>` — verify with `git config user.email` (no `--global`) before committing if this ever looks wrong; the machine's global identity is a different, work, account. Never add a `Co-Authored-By: Claude` trailer to commits in this repo.
+- Remote is `origin` → `git@github-personal:Slv-WebTech/personal-finance.git` — push/pull only over the `github-personal` SSH alias, not the default `github.com` host (mapped to a different key on this machine).
 
 ## Known issues
 None currently.
@@ -48,11 +51,10 @@ See `DECISIONS.md` for the full log. Phase 1 additions: Vitest over Jest for bac
 - Do not claim any feature is `DONE`/`IMPLEMENTED` in `PROJECT_PLAN.md`, `FEATURES.md`, or `IMPLEMENTED_FEATURES.md` without verified, working code (and, since Phase 1, without passing tests where tests are the established norm for that area).
 - Don't change `server/src/config/db.ts`'s non-blocking-connect behavior into a hard startup failure without discussing it first.
 - Don't let `POST /api/auth/register` accept a client-supplied `role` (see security invariant above).
+- Don't push using the default `github.com` SSH host or the machine's global git identity — always `github-personal` + the repo-local `Slv-WebTech` identity (see above). Force-pushing was safe once (brand-new repo, no collaborators) — don't treat that as a standing license; confirm before any future force-push.
 
 ## Next recommended action
-Two things pending, either order:
-1. **Commit the outstanding work.** The doc-sync pass and all of Phase 1 are uncommitted. Ask the user before committing (per standing git-safety rule) — don't commit silently.
-2. **Begin Phase 2 — Account Management** (see `PROJECT_PLAN.md`): `Account` Mongoose model per `DATABASE.md`, CRUD routes scoped to the authenticated user (first real use of `requireAuth` + ownership-filtering pattern), tests following the Phase 1 pattern (Vitest unit + Supertest integration against `personal-finance-test`).
+Begin **Phase 2 — Account Management** (see `PROJECT_PLAN.md`): `Account` Mongoose model per `DATABASE.md`, CRUD routes scoped to the authenticated user (first real use of `requireAuth` + ownership-filtering pattern), tests following the Phase 1 pattern (Vitest unit + Supertest integration against `personal-finance-test`).
 
 ## Commands needed to run the project
 - Start local MongoDB: `docker compose up -d` (repo root; container `personal-finance-mongo`)
@@ -72,7 +74,7 @@ Two things pending, either order:
 - Server: `cd server && npm run build` (compiles to `server/dist/`, not yet manually verified end-to-end)
 
 ## Deployment commands
-Not available yet — no remote/hosting configured. See `DEPLOYMENT.md` for the planned targets.
+Not available yet — no application hosting configured (Vercel/Render/Railway/Atlas). A git remote exists (GitHub, source control only — see `DEPLOYMENT.md`'s "Source control" section), which is separate from deploying the running app. See `DEPLOYMENT.md` for the planned hosting targets.
 
 ## Environment requirements
 - Node.js (v24 confirmed installed) and npm (v11 confirmed)

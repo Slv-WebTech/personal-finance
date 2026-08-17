@@ -26,6 +26,6 @@ Up from 2/10: the first real product feature exists, is tested, and was built wi
 ## Recommended improvements (in priority order)
 1. Begin Phase 2 (Account Management) — next in `PROJECT_PLAN.md`, and the first point MongoDB's lack of FK enforcement actually gets exercised (ownership checks in controllers).
 2. Add rate limiting to `/api/auth/login` and `/api/auth/register` — currently the most concrete unaddressed security gap, called out explicitly above and in `IMPLEMENTED_FEATURES.md`.
-3. Set up a CI check (GitHub Actions: lint + type-check + test) once a git remote exists — a local repository exists now, but no remote has been configured. Worth prioritizing now that a real test suite exists to run in it.
+3. Set up a CI check (GitHub Actions: lint + type-check + test) — a git remote now exists (`Slv-WebTech/personal-finance` on GitHub, private), so this is unblocked. Worth prioritizing now that a real test suite exists to run in it.
 4. Start client-side auth UI (login/register forms, auth context) once Phase 2 or 3 makes a dashboard worth logging into — no rush while there's nothing behind the login yet.
 5. Re-score after Phase 2.

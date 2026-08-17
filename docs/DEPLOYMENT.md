@@ -7,6 +7,10 @@
 - **Client/server:** run directly with `npm run dev` in each folder (see `README.md` / `DEV_CONTEXT.md` for exact commands) — no containerization for the apps themselves in development.
 - Verified 2026-08-14: server connects to the Dockerized MongoDB successfully (`GET /api/health` returned `database: "connected"`).
 
+## Source control
+- **Remote:** `origin` → `git@github-personal:Slv-WebTech/personal-finance.git` (private GitHub repo, created 2026-08-17). Pushed over SSH via the `github-personal` host alias in `~/.ssh/config` — **not** the default `github.com` host on this machine, which is mapped to a different (work) SSH key.
+- **Commit identity:** set locally for this repo (`git config user.name`/`user.email`, not global) to `Slv-WebTech <70682890+Slv-WebTech@users.noreply.github.com>` — keeps the repo's authorship tied to the personal GitHub account rather than whatever identity is globally configured on the machine. Commits in this repo never include a `Co-Authored-By: Claude` trailer.
+
 ## Production targets (not yet set up)
 | Component | Platform | Notes |
 |---|---|---|
@@ -25,7 +29,7 @@
 None of these are provisioned yet. Set via each platform's secret store in production — never commit a real `.env`; only commit `server/.env.example` with placeholder values.
 
 ## CI/CD
-Not set up. Planned: a GitHub Actions workflow running lint + build (+ tests once they exist) on pull requests, before any deploy step. This is listed as a "bonus feature" in the original product spec, but should be treated as standard practice once a remote git repository exists — see `FUTURE_FEATURES.md`.
+Not set up. Planned: a GitHub Actions workflow running lint + type-check + test (a real test suite exists as of Phase 1 — see `TESTING.md`) on pull requests, before any deploy step. This is listed as a "bonus feature" in the original product spec, but should be treated as standard practice now that a remote git repository exists — see `FUTURE_FEATURES.md`.
 
 ## Current state
-A local git repository exists (initialized 2026-08-14, no remote configured yet) and local MongoDB is running via Docker. No hosting accounts are connected, and no production build has ever been deployed. This section will be rewritten with real URLs and verified deploy steps once a first deployment actually happens — do not list a deployed URL here until it's confirmed live.
+A git repository exists with a remote on GitHub (`Slv-WebTech/personal-finance`, private) and local MongoDB running via Docker. No hosting accounts (Vercel/Render/Railway/Atlas) are connected, and no production build has ever been deployed. This section will be rewritten with real URLs and verified deploy steps once a first deployment actually happens — do not list a deployed URL here until it's confirmed live.

@@ -122,6 +122,16 @@ Architecture Decision Record. Append-only in spirit — if a decision is later r
 
 ---
 
+### Decision: GitHub remote on the personal account, via a dedicated SSH host alias and repo-local commit identity
+**Date:** 2026-08-17
+**Context:** This machine has both a work and a personal GitHub identity configured in `~/.ssh/config` (`github-work`/`github-personal` aliases, plus a default `github.com` host mapped to the work key) and a global git config defaulting to the work name/email. The user wanted this project pushed to their personal GitHub account (`Slv-WebTech`).
+**Options considered:** Push via the default `github.com` SSH host (simpler, but would authenticate as — and by default commit as — the work identity) vs. explicitly using the `github-personal` host alias plus a repo-local `git config user.name`/`user.email` override.
+**Decision:** Remote is `git@github-personal:Slv-WebTech/personal-finance.git`; commit identity is set locally in this repo only (`Slv-WebTech <70682890+Slv-WebTech@users.noreply.github.com>`, the account's GitHub-provided noreply address) — the machine's global git config is untouched.
+**Reason:** The first two commits were accidentally pushed under the work identity (global git config default) before this was caught via GitHub's contributor view; rewriting was needed. Getting this right at the remote/identity level prevents it from recurring on every future commit in this repo.
+**Consequences:** The two initial commits were rewritten (`git commit-tree`, preserving trees/dates/messages exactly) and force-pushed (`--force-with-lease`) — safe here since the repo was brand new with no other collaborators. Commits in this repo also never carry a `Co-Authored-By: Claude` trailer, overriding the general convention. See `DEPLOYMENT.md`'s "Source control" section for the exact remote URL and identity to use.
+
+---
+
 ### Decision: Documentation-first workflow
 **Date:** 2026-08-14
 **Context:** User provided an explicit project protocol requiring inspection and documentation before any implementation.

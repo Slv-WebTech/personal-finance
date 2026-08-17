@@ -16,7 +16,7 @@
 - **Implementation status:** DONE, verified 2026-08-14
 - **Where it exists:** `docker-compose.yml` (repo root, `mongo:7` container), `server/.env` (untracked, real `MONGODB_URI` + generated `JWT_SECRET`), local git repository (`git init`, initial commit made)
 - **Testing status:** Verified — container starts via `docker compose up -d`, `mongosh` ping returned `{ok: 1}`, server connected to it successfully.
-- **Known limitations:** Local only — no MongoDB Atlas (production) cluster provisioned yet, no git remote configured yet.
+- **Known limitations:** No MongoDB Atlas (production) cluster provisioned yet. Git remote exists (`Slv-WebTech/personal-finance` on GitHub, private, via the `github-personal` SSH alias — see `DEPLOYMENT.md`) but no application hosting (Vercel/Render/Railway) is connected.
 
 ## Authentication (Phase 1)
 - **Implementation status:** DONE, verified 2026-08-17
