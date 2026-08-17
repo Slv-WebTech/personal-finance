@@ -12,20 +12,20 @@ Nothing is marked `DONE` until code exists, is integrated, and has been verified
 - **Dependencies:** None
 - **Implementation considerations:** `client/` (Vite + React + TS) and `server/` (Express + TS) as sibling folders per the agreed structure; ESLint + Prettier in both; `.env.example` in server; MongoDB connection via Mongoose with a health-check route.
 - **Acceptance criteria:** `npm run dev` starts the client (verified); `npm run dev` starts the server and it runs correctly whether or not `MONGODB_URI` is configured (verified — logs a warning and stays up if unset, per `db.ts`'s non-blocking connect); a `GET /api/health` route returns 200 with `{status, database, uptime}` (verified via curl).
-- **Status:** DONE (2026-08-14) — verified: client `tsc -b` clean, server `tsc --noEmit` clean, server `eslint .` clean, both dev servers manually started and confirmed responding, then stopped. Actual MongoDB connectivity (Atlas or local) is not yet verified since no `MONGODB_URI` has been provisioned — that will be confirmed in Phase 1 when auth actually needs to read/write a user.
-
-## In Progress
-_(none — Phase 0 complete; Phase 1 not yet started)_
-
-## Next
+- **Status:** DONE (2026-08-14) — verified: client `tsc -b` clean, server `tsc --noEmit` clean, server `eslint .` clean, both dev servers manually started and confirmed responding, then stopped. MongoDB connectivity confirmed the same day against a local Docker container (`GET /api/health` → `database: "connected"`) — see the "Local MongoDB via Docker" decision in `DECISIONS.md` and the follow-up entry in `CHANGELOG.md`.
 
 ### Phase 1 — Authentication
 - **Objective:** Register, login, JWT issuance/verification, role field on user (customer/advisor/admin), bcrypt password hashing.
 - **Priority:** High
 - **Dependencies:** Phase 0
 - **Implementation considerations:** `POST /api/auth/register`, `POST /api/auth/login`; auth middleware for protected routes; password never returned in any response.
-- **Acceptance criteria:** A new user can register, log in, receive a JWT, and access a protected test route with it; invalid credentials are rejected; passwords are hashed at rest.
-- **Status:** PLANNED
+- **Acceptance criteria:** A new user can register, log in, receive a JWT, and access a protected test route with it (verified via `GET /api/auth/me`); invalid credentials are rejected; passwords are hashed at rest.
+- **Status:** DONE (2026-08-17) — verified: `tsc`/`eslint` clean, 10 Vitest tests passing (unit: password hashing, JWT sign/verify; integration: register/duplicate-email/invalid-payload/role-stripping, login success/failure, `/me` authed/unauthed), plus a manual curl smoke test of the full register → login → `/me` flow against the real dev database (test user cleaned up afterward). Security note: registration always creates a `customer` — a client-supplied `role` field is silently ignored (see `DECISIONS.md`); advisor/admin account provisioning remains an open question (`PROJECT_PLAN.md` open questions below).
+
+## In Progress
+_(none — Phase 1 complete; Phase 2 not yet started)_
+
+## Next
 
 ### Phase 2 — Account Management
 - **Objective:** CRUD for bank accounts (name, type, balance, currency, status), scoped to the logged-in user.

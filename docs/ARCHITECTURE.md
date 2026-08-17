@@ -1,6 +1,6 @@
 # Architecture
 
-**Status: PLANNED.** Nothing described below is built yet. This is the target architecture, decided so that Phase 0 scaffolding has a concrete shape to build toward rather than being invented ad hoc.
+**Status: PARTIALLY BUILT.** The folder structure, layering (routes → controllers → models → middleware → utils), Express app, error-handling middleware, and non-blocking Mongoose connection exist since Phase 0 (`GET /api/health`). As of Phase 1, authentication is also real: JWT + bcrypt, the `requireAuth`/`requireRole` middleware, and the `users` collection — see `IMPLEMENTED_FEATURES.md`. Accounts, transactions, budgets, investments, dashboard, and notifications are still just the target to build toward, not built.
 
 ## Folder structure
 

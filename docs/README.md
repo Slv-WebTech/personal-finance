@@ -2,7 +2,7 @@
 
 This directory is the durable source of truth for the project. If the conversation history that produced these docs is lost, this directory alone should be enough for a new developer or AI agent to understand the project and continue it correctly.
 
-**Project status as of 2026-08-14: pre-implementation.** No application code exists yet. Everything described in these docs (beyond the docs themselves) is a plan, not a fact. See `PROJECT_PLAN.md` and `DEV_CONTEXT.md` for what happens next.
+**Project status as of 2026-08-14: early development.** Phase 0 scaffolding (client + server, both verified runnable), a local git repository, and local MongoDB (via Docker) are done. No product features are implemented yet — Phase 1 (Authentication) is next. See `PROJECT_PLAN.md` and `DEV_CONTEXT.md` for the live state.
 
 ## Reading order for a new agent/developer
 

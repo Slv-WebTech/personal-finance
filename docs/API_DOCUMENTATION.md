@@ -1,15 +1,22 @@
 # API Documentation
 
-**Status: PLANNED.** No endpoint listed here exists yet. This is the target contract for Phase 0–8 (`PROJECT_PLAN.md`). Update each entry's status to `IMPLEMENTED` only once it's built, tested, and actually returns what's documented here.
+**Status: `/api/health` and `/api/auth/*` are real.** Everything else is the target contract for Phase 2–8 (`PROJECT_PLAN.md`). Update each entry's status to `IMPLEMENTED` only once it's built, tested, and actually returns what's documented here.
 
-All endpoints are unversioned (`/api/...`, see `DECISIONS.md`). All protected endpoints expect `Authorization: Bearer <JWT>`. Error responses use `{ error: { message: string, code?: string } }` (finalize on first real implementation).
+All endpoints are unversioned (`/api/...`, see `DECISIONS.md`). All protected endpoints expect `Authorization: Bearer <JWT>`. Error responses use `{ error: { message: string, details?: unknown[] } }` — `details` is only present on 400 validation failures (raw zod issues); confirmed via `/api/auth/*` (finalize `code` if/when a route needs machine-readable error discrimination — not needed yet).
+
+## Infrastructure — `/api/health`
+| Method | Path | Purpose | Auth required | Status |
+|---|---|---|---|---|
+| GET | `/api/health` | Liveness check: `{ status, database: "connected"\|"disconnected", uptime }` | No | IMPLEMENTED (Phase 0) |
 
 ## Auth — `/api/auth`
 | Method | Path | Purpose | Auth required | Status |
 |---|---|---|---|---|
-| POST | `/api/auth/register` | Create a new user (name, email, password, role) | No | PLANNED |
-| POST | `/api/auth/login` | Authenticate, return JWT | No | PLANNED |
-| GET | `/api/auth/me` | Return the current authenticated user's profile | Yes | PLANNED |
+| POST | `/api/auth/register` | Create a new user (name, email, password). **Any client-supplied `role` is silently ignored — every registration creates a `customer`.** Returns `{ token, user }`. 409 on duplicate email, 400 on invalid payload. | No | IMPLEMENTED |
+| POST | `/api/auth/login` | Authenticate, return `{ token, user }`. 401 on invalid credentials. | No | IMPLEMENTED |
+| GET | `/api/auth/me` | Return `{ user }` for the token's owner. 401 if missing/invalid/expired token. | Yes | IMPLEMENTED |
+
+`user` in all responses above is `{ id, name, email, role }` — never includes `passwordHash`. JWT expires after 7 days (see `DECISIONS.md`).
 
 ## Accounts — `/api/accounts`
 | Method | Path | Purpose | Auth required | Status |

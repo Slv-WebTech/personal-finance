@@ -1,19 +1,19 @@
 # Database
 
-**Status: DRAFT / PLANNED.** No collections exist yet — MongoDB hasn't been provisioned or connected to. These are proposed Mongoose schemas to build Phase 0–8 against; expect them to evolve once real implementation starts, and update this file when they do (don't let it drift from the actual schema code).
+**Status: `users` is real (`server/src/models/User.ts`); everything else below is still a DRAFT / PLANNED schema.** MongoDB is running and connected (local Docker container, verified). Update each collection's note here when its Mongoose model is actually built, and don't let this drift from the real schema code.
 
 ## Database: MongoDB (via Mongoose)
 See `DECISIONS.md` for why MongoDB was chosen over PostgreSQL, and `ARCHITECTURE.md` for the referential-integrity implications (no FK enforcement — ownership/relations must be checked in application code).
 
 ## Collections
 
-### `users`
+### `users` — IMPLEMENTED (`server/src/models/User.ts`)
 | Field | Type | Notes |
 |---|---|---|
-| `name` | String | required |
-| `email` | String | required, unique, lowercased |
-| `passwordHash` | String | required; bcrypt hash, never the plaintext password |
-| `role` | String enum: `customer` \| `advisor` \| `admin` | required, default `customer` |
+| `name` | String | required, trimmed |
+| `email` | String | required, unique, lowercased, trimmed |
+| `passwordHash` | String | required; bcrypt hash (10 salt rounds), never the plaintext password |
+| `role` | String enum: `customer` \| `advisor` \| `admin` | required, default `customer`. In practice always `customer` today — `POST /api/auth/register` never lets a client set this (see `DECISIONS.md`); nothing yet creates `advisor`/`admin` users. |
 | `createdAt` / `updatedAt` | Date | Mongoose timestamps |
 
 ### `accounts`

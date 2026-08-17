@@ -1,30 +1,31 @@
 # Project Score
 
-**Evaluated: 2026-08-14 (updated same day after Phase 0 scaffolding).** Re-run this evaluation after each major milestone (see `PROJECT_PLAN.md` phases).
+**Evaluated: 2026-08-14, updated after Phase 0 scaffolding and again after git init + local MongoDB setup; re-scored 2026-08-17 after Phase 1 (Authentication).** Re-run this evaluation after each major milestone (see `PROJECT_PLAN.md` phases).
 
 | Category | Score | Reasoning |
 |---|---|---|
-| Architecture | 1/10 | Folder structure and layering from `ARCHITECTURE.md` now physically exist and were verified runnable, but hold zero real business logic yet — one route (`/api/health`) proves the shape works, nothing more. |
-| Code quality | 1/10 | The little code that exists (health route, db connect, error handler) is small, typed, and lint-clean, but there's not enough of it to judge real code quality. |
-| Maintainability | 1/10 | Same reasoning — too little surface area to assess meaningfully yet. |
-| UI/UX | 0/10 | Only a placeholder landing page exists; no real UI. |
+| Architecture | 2/10 | The layered structure now holds a real, working vertical slice (auth: model → validation → controller → route, with middleware), not just scaffolding. Still only one feature area out of ~8. |
+| Code quality | 3/10 | Auth code is small, typed, lint-clean, and covered by passing tests — a real (if narrow) sample to judge. Security-sensitive details (role never client-settable, password never returned, centralized validation) were handled deliberately, not accidentally. |
+| Maintainability | 2/10 | Same reasoning as code quality, but still too little surface area (one feature) to be confident this holds up as the codebase grows. |
+| UI/UX | 0/10 | Only a placeholder landing page exists; no real UI, including no login/register screens yet — auth is backend-only. |
 | Accessibility | 0/10 | Nothing to evaluate yet. |
 | Performance | 0/10 | Nothing to measure. |
-| Security | 0/10 | No auth, no data handling exists yet. Plan (JWT + bcrypt + RBAC + validation) is sound on paper but unverified. |
-| Testing | 0/10 | No tests exist; no test infrastructure set up yet (this is a real gap now that code exists, not just an abstract plan). |
-| Documentation | 7/10 | `/docs` baseline exists, is grounded in real repo state, and was actively kept in sync through the first real implementation step (Phase 0). Docked points because it hasn't yet been tested against a longer stretch of real feature work. |
+| Security | 3/10 | Passwords hashed (bcrypt, never logged/returned), JWT-based auth working, input validated at the boundary (zod), privilege escalation via self-assigned `role` explicitly closed off. Docked heavily for: no rate limiting on login/register (brute-force risk, explicitly flagged as unaddressed), no password-reset flow, no CSRF/helmet hardening yet, and only one endpoint group has been security-reviewed at all. |
+| Testing | 3/10 | Real automated tests exist for the first time (10 Vitest tests: unit + integration, run against a real dedicated test database, not mocked) and are passing. Docked heavily because this covers exactly one feature area and the frontend has zero test infrastructure. |
+| Documentation | 7/10 | `/docs` has now been kept in sync through two real implementation phases plus an explicit full-sync pass — the discipline is holding, not just a one-time snapshot. Docked because it still hasn't been tested against a long stretch of continuous feature work without prompting. |
 | Scalability | N/A | Still too early to assess. |
-| Developer experience | 4/10 | Type-checking, linting, and hot-reload dev servers work and were verified end-to-end for both `client/` and `server/`. Docked heavily for: no CI, no tests, no pre-commit hooks, no build (only type-check) verified yet. |
-| Error handling | 1/10 | A centralized Express error-handling middleware exists and is wired in, but is unexercised — nothing yet throws through it in a real scenario. |
+| Developer experience | 5/10 | Type-checking, linting, hot-reload dev servers, real local MongoDB, version control, and a working test command are all in place and verified end-to-end. Docked for: no CI, no pre-commit hooks, no build (only type-check) verified yet. |
+| Error handling | 2/10 | Centralized error middleware exists and controllers now produce real, tested error responses (401/403/409/400) for real scenarios (bad credentials, duplicate email, invalid payload, missing/invalid token) — the first time error handling has actually been exercised, not just wired in. |
 | Responsive design | 0/10 | No real UI exists; one breakpoint (768px) is specified in the style guide only. |
-| Feature completeness | 0/10 | 0 of the ~8 core feature areas in `PROJECT_PLAN.md` are implemented. Scaffolding is not a feature. |
+| Feature completeness | 1/10 | 1 of the ~8 core feature areas (Authentication) is implemented, backend-only. |
 
-## Overall project health score: 2/10
+## Overall project health score: 3/10
 
-Up from 1/10: the architecture is no longer just documented, it's built and verified runnable. Still very early — every product feature (auth through notifications) remains unbuilt. Re-score after Phase 1 (auth), which is the first point security, code quality, and error handling become meaningfully assessable.
+Up from 2/10: the first real product feature exists, is tested, and was built with real security judgment (not just following a checklist) — role-escalation was explicitly closed off, not overlooked. Still early: no UI beyond a placeholder, only one feature area done, and the security/testing gains so far are narrow (one endpoint group). Re-score after Phase 2 (Account Management), which is the first point resource-ownership enforcement (a named risk in `TECHNICAL_DEBT.md`) becomes assessable.
 
 ## Recommended improvements (in priority order)
-1. Provision a real `MONGODB_URI` (local or Atlas) and verify the `connected` path of `GET /api/health` — currently only the `disconnected` path has been tested.
-2. Set up testing infrastructure alongside Phase 1 (auth), not after — retrofitting tests onto financial-calculation code later is higher risk than building it in from the start.
-3. Set up a CI check (GitHub Actions: lint + type-check + build) once a git remote exists — no repository has been initialized yet.
-4. Re-score after Phase 1 (auth).
+1. Begin Phase 2 (Account Management) — next in `PROJECT_PLAN.md`, and the first point MongoDB's lack of FK enforcement actually gets exercised (ownership checks in controllers).
+2. Add rate limiting to `/api/auth/login` and `/api/auth/register` — currently the most concrete unaddressed security gap, called out explicitly above and in `IMPLEMENTED_FEATURES.md`.
+3. Set up a CI check (GitHub Actions: lint + type-check + test) once a git remote exists — a local repository exists now, but no remote has been configured. Worth prioritizing now that a real test suite exists to run in it.
+4. Start client-side auth UI (login/register forms, auth context) once Phase 2 or 3 makes a dashboard worth logging into — no rush while there's nothing behind the login yet.
+5. Re-score after Phase 2.

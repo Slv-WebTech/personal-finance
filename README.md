@@ -20,8 +20,8 @@ Requires Node.js (LTS) and Docker (for local MongoDB).
 # 1. Start MongoDB
 docker compose up -d
 
-# 2. Configure environment
-cp server/.env.example server/.env      # already provisioned locally with a dev JWT secret
+# 2. Configure environment (generate your own JWT_SECRET; server/.env.example has the full list)
+cp server/.env.example server/.env
 cp client/.env.example client/.env
 
 # 3. Install dependencies

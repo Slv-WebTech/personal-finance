@@ -83,6 +83,45 @@ Architecture Decision Record. Append-only in spirit — if a decision is later r
 
 ---
 
+### Decision: Local MongoDB via Docker (not Atlas) for development
+**Date:** 2026-08-14
+**Context:** Needed a working `MONGODB_URI` to move past Phase 0. Docker Desktop was confirmed installed and running on this machine; no local MongoDB binary was installed.
+**Options considered:** MongoDB Atlas free-tier cluster (matches the production target in `DEPLOYMENT.md`, but requires the user to sign up/log in and create a cluster in the browser — not something that can be done on their behalf) vs. a local MongoDB container via Docker Compose (no account needed, works immediately, easy to reset/wipe).
+**Decision:** Docker (`docker-compose.yml`, `mongo:7`, named volume `mongo-data`, port 27017).
+**Reason:** User's explicit choice.
+**Consequences:** Local dev now depends on Docker Desktop being installed and running. Production still targets MongoDB Atlas (see `DEPLOYMENT.md`) — switching environments is just a different `MONGODB_URI` value, no code change. `docker compose down -v` would destroy local data (the named volume) — not something to run casually.
+
+---
+
+### Decision: Vitest (not Jest) for backend testing
+**Date:** 2026-08-17
+**Context:** `TESTING.md` originally specified Jest + Supertest for the backend, written before the Phase 0 decision to use native ESM + NodeNext on the server. Jest's ESM support is still experimental/flag-gated and known to cause friction with NodeNext-resolved TypeScript.
+**Options considered:** Jest + Supertest (as originally planned, but fighting the server's module system) vs. Vitest + Supertest (zero-config ESM/TS support, same assertion/mocking ergonomics).
+**Decision:** Vitest + Supertest for the backend (Supertest itself is unchanged — it's test-runner agnostic).
+**Reason:** Avoids a real, known class of configuration pain for no offsetting benefit; Vitest is already the plan for frontend component tests (`TESTING.md`), so this also reduces the number of distinct test runners in the project from two to one.
+**Consequences:** `server/vitest.config.ts` + `server/vitest.setup.ts` added. Test command is `npm test` → `vitest run`. `TESTING.md` updated to match.
+
+---
+
+### Decision: Registration never accepts a client-supplied `role`
+**Date:** 2026-08-17
+**Context:** The `User` model has a `role` field (`customer` \| `advisor` \| `admin`) per `DATABASE.md`, and `POST /api/auth/register` is a public, unauthenticated endpoint.
+**Options considered:** Accept `role` in the register payload (lets a caller self-assign `admin` — a privilege-escalation vulnerability) vs. always hardcode `role: 'customer'` server-side, ignoring anything the client sends.
+**Decision:** Always `customer`. The `registerSchema` (zod) doesn't even define a `role` field, so it's stripped before the controller runs; the controller also hardcodes `role: 'customer'` independently as a second layer of defense.
+**Reason:** A public registration endpoint must never be able to mint a privileged account. This is a correctness/security requirement, not a style preference.
+**Consequences:** There is currently no way to create an `advisor` or `admin` account at all. This is intentional, not a bug — it's flagged as an open product question in `PROJECT_PLAN.md` ("what can a Financial Advisor / Administrator actually do") and must be answered with a real, deliberately-scoped provisioning mechanism (e.g. an admin-only invite endpoint, a manual DB seed, etc.) before those roles are usable — not by quietly opening up the public register endpoint.
+
+---
+
+### Decision: JWT expiry of 7 days
+**Date:** 2026-08-17
+**Context:** `signToken` needed a concrete expiry; not specified anywhere in prior docs.
+**Decision:** 7 days, no refresh-token mechanism yet.
+**Reason:** Reasonable default for a portfolio project — long enough to not be annoying during development/demoing, short enough to not be a glaring security smell in an interview conversation about the project.
+**Consequences:** No silent re-authentication — once a token expires, the client must log in again. If session UX becomes a real concern later, a refresh-token flow is the natural next step (not built, not currently planned).
+
+---
+
 ### Decision: Documentation-first workflow
 **Date:** 2026-08-14
 **Context:** User provided an explicit project protocol requiring inspection and documentation before any implementation.

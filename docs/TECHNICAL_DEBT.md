@@ -1,6 +1,11 @@
 # Technical Debt
 
-**Current state: none.** No code exists yet, so there is no debt to track. This file starts tracking the moment Phase 0 scaffolding begins.
+**Current state:** two known, accepted gaps from Phase 1 (below); nothing else. Phase 0 scaffolding, git init, and local MongoDB setup introduced no shortcuts.
+
+## Current debt
+
+- **No rate limiting on `/api/auth/login` or `/api/auth/register`.** Both are unauthenticated-by-nature endpoints, which makes them the obvious brute-force/credential-stuffing target. Flagged as a "near-term hardening item" in `ARCHITECTURE.md` before Phase 1 was built, and deliberately deferred rather than blocking Phase 1's completion. **Resolve:** add a rate-limiting middleware (e.g. `express-rate-limit`) scoped to these two routes before this project is ever exposed outside local development.
+- **No password-reset flow.** Not part of Phase 1's scope (see `PROJECT_PLAN.md` acceptance criteria) and not yet scheduled. **Resolve:** design as a real feature (token generation, expiry, email delivery or equivalent) when prioritized — don't bolt on a minimal version without thinking through token security.
 
 ## Pre-emptive risk areas to watch (not debt yet — things to get right the first time)
 These are drawn from the product spec's own "Top Challenges" list and this project's architecture — recorded here so they aren't accidentally deferred into debt without a conscious decision:

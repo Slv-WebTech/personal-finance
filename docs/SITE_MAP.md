@@ -1,6 +1,6 @@
 # Site Map
 
-**Status: PLANNED.** No routes exist yet — this maps the intended application per `PROJECT_CONTEXT.md`'s application flow (Login → Dashboard → Manage Accounts → Add Transactions → Create Budget → Analyze Spending → Financial Reports). Keep this file synchronized with `client/` routes once they exist.
+**Status: PLANNED.** Only `/` (a placeholder `Landing` page, wired via React Router in Phase 0) exists in code. Everything else below maps the intended application per `PROJECT_CONTEXT.md`'s application flow (Login → Dashboard → Manage Accounts → Add Transactions → Create Budget → Analyze Spending → Financial Reports). Keep this file synchronized with `client/` routes as they're built.
 
 ```
 Application
@@ -25,7 +25,7 @@ Application
 
 | Route | Page | Purpose | Access | Key components | API dependencies | Status |
 |---|---|---|---|---|---|---|
-| `/` | Landing | Marketing/entry page | Public | — | — | PLANNED |
+| `/` | Landing | Marketing/entry page | Public | `Landing` | — | PLACEHOLDER — page exists (`client/src/pages/Landing.tsx`), routed via React Router, but has no real content yet |
 | `/login` | Login | Authenticate existing user | Public | `LoginForm` | `POST /api/auth/login` | PLANNED |
 | `/register` | Register | Create new account | Public | `RegisterForm` | `POST /api/auth/register` | PLANNED |
 | `/forgot-password` | Forgot Password | Password reset request | Public | `ForgotPasswordForm` | Not yet specced | PLANNED (unconfirmed) |

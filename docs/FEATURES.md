@@ -2,15 +2,15 @@
 
 Status legend: `PLANNED` · `IN_PROGRESS` · `IMPLEMENTED` · `TESTING` · `PARTIALLY_IMPLEMENTED` · `BLOCKED` · `DEPRECATED`
 
-All features below are `PLANNED` — none exist yet. See `IMPLEMENTED_FEATURES.md` for the (currently empty) factual record of what's actually verified working.
+Authentication is `IMPLEMENTED` (backend only); every other product feature below remains `PLANNED`. See `IMPLEMENTED_FEATURES.md` for the factual record of what's actually verified working.
 
 ## Authentication
 - **Purpose:** Secure registration/login; role-based access (Customer, Financial Advisor, Administrator).
 - **User value:** Protects financial data; enables role-appropriate views.
 - **Dependencies:** None (foundational).
-- **Status:** PLANNED
-- **Related pages:** `/login`, `/register`
-- **Related APIs:** `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
+- **Status:** IMPLEMENTED (backend) — API and JWT/RBAC infrastructure done and tested; no client-side login/register UI yet, so this isn't usable end-to-end by a real user yet. Role is currently limited to `customer` at signup (see `DECISIONS.md`) — advisor/admin provisioning is unbuilt.
+- **Related pages:** `/login`, `/register` (not yet built)
+- **Related APIs:** `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` (all implemented)
 
 ## Account Management
 - **Purpose:** CRUD for bank accounts (name, type, balance, currency, status).

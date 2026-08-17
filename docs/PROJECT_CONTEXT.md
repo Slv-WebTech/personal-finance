@@ -28,7 +28,7 @@ Individual consumers managing personal finances. Three roles are modeled:
 A portfolio-grade project that mirrors a real fintech product closely enough to demonstrate enterprise-style full-stack engineering: secure auth, financial data modeling, analytics, budgeting logic, and dashboard-grade data visualization — built and documented to production standards, not a toy CRUD demo.
 
 ## Current project status
-**Pre-implementation.** As of 2026-08-14, the working directory contains only this `/docs` structure. No client or server code, no database, no deployment exists yet. See `DEV_CONTEXT.md` for the live status and `PROJECT_PLAN.md` for the roadmap.
+**Early development.** As of 2026-08-14: Phase 0 (client/server scaffolding), local git repository, and local MongoDB (via Docker) are complete and verified. No product features (auth, accounts, transactions, etc.) are implemented yet — Phase 1 (Authentication) is next. No production deployment exists. See `DEV_CONTEXT.md` for the live status and `PROJECT_PLAN.md` for the roadmap.
 
 ## Technology stack
 Locked decisions (see `DECISIONS.md` for rationale):
