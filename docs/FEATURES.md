@@ -2,14 +2,16 @@
 
 Status legend: `PLANNED` · `IN_PROGRESS` · `IMPLEMENTED` · `TESTING` · `PARTIALLY_IMPLEMENTED` · `BLOCKED` · `DEPRECATED`
 
-Authentication is `IMPLEMENTED` (backend only); every other product feature below remains `PLANNED`. See `IMPLEMENTED_FEATURES.md` for the factual record of what's actually verified working.
+Authentication is `IMPLEMENTED`; every other product feature below remains `PLANNED`. See `IMPLEMENTED_FEATURES.md` for the factual record of what's actually verified working.
+
+A shared design system and reusable UI component library (`client/src/styles/`, `client/src/components/ui/`) now exists in the client and is available for the `PLANNED` features below to build their screens against once their backends land — it does not change any of their statuses.
 
 ## Authentication
 - **Purpose:** Secure registration/login; role-based access (Customer, Financial Advisor, Administrator).
 - **User value:** Protects financial data; enables role-appropriate views.
 - **Dependencies:** None (foundational).
-- **Status:** IMPLEMENTED (backend) — API and JWT/RBAC infrastructure done and tested; no client-side login/register UI yet, so this isn't usable end-to-end by a real user yet. Role is currently limited to `customer` at signup (see `DECISIONS.md`) — advisor/admin provisioning is unbuilt.
-- **Related pages:** `/login`, `/register` (not yet built)
+- **Status:** IMPLEMENTED — API and JWT/RBAC infrastructure, plus real client-side login/register/session UI, are done and wired together end-to-end: a user can register, log in, stay logged in across a reload (session restored via `GET /api/auth/me`), and reach an auth-gated `/app` landing page. Role is currently limited to `customer` at signup (see `DECISIONS.md`) — advisor/admin provisioning is unbuilt.
+- **Related pages:** `/login`, `/register`, `/app` (auth-gated landing page)
 - **Related APIs:** `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` (all implemented)
 
 ## Account Management

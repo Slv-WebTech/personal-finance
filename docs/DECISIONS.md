@@ -138,3 +138,55 @@ Architecture Decision Record. Append-only in spirit — if a decision is later r
 **Decision:** Adopted as described — `/docs` structure created and kept synchronized before/alongside all future code changes.
 **Reason:** User's explicit, standing instruction for how this project should be run.
 **Consequences:** Every future feature follows Understand → Plan → Check consistency → Implement → Verify → Document (see the protocol); documentation must be kept truthful to actual code state, never aspirational.
+
+---
+
+### Decision: CSS Modules as the frontend styling approach
+**Date:** 2026-08-22
+**Context:** The frontend had no styling approach decided beyond the raw, unmodified Vite starter-template CSS (`index.css`/`App.css`) — no CSS framework, CSS-in-JS library, or component-kit had been chosen, and a real design system + first component library needed to be built.
+**Options considered:**
+- Tailwind CSS — utility-first, fast to write, but a new dependency and a different authoring style than plain CSS.
+- A CSS-in-JS library like styled-components/Emotion — co-locates styles with components, but adds a runtime dependency and a bundle-size/performance cost.
+- A full UI kit like MUI/Chakra — fastest to a "finished" look, but pulls in an opinionated design language that would fight the goal of a distinctive, non-generic visual identity, plus a large dependency.
+- Plain CSS Modules (`*.module.css`) — co-located per component, scoped class names, zero new dependency; Vite supports it natively out of the box.
+**Decision:** CSS Modules, with a small hand-written helper (`client/src/utils/cx.ts`) for conditional class-name merging instead of adding a `classnames`/`clsx` dependency.
+**Reason:** Matches this project's standing "don't add dependencies speculatively" convention (see `PROJECT_STYLE.md`'s state-management note making the same call about Redux/Zustand); avoids importing someone else's design language (a UI kit) when the goal was a distinctive, restrained visual identity; needs zero build configuration since Vite already supports `.module.css` natively.
+**Consequences:** Every component that needs scoped styling gets a co-located `.module.css` file (more files than a single global stylesheet or a CSS-in-JS approach would produce, but each stays small and colocated); no dynamic/runtime theming beyond what plain CSS custom properties + `prefers-color-scheme` already provide (which was sufficient for the light/dark palette actually needed).
+
+---
+
+### Decision: Design token palette — cobalt accent + neutral ink/canvas base, replacing the Vite-template default purple
+**Date:** 2026-08-22
+**Context:** The Vite React+TS starter template ships a default accent color (`#aa3bff`, a bright purple/violet, with a corresponding dark-mode variant) baked into the placeholder `index.css` inherited from Phase 0 scaffolding — never a deliberate product design decision, just template leftovers. A real color system had to be chosen for the first real UI (Landing, Login, Register, the authenticated placeholder home).
+**Options considered:**
+- Keep the template's purple accent — zero effort, but reads as generic/unbranded; purple/violet gradients are the default look of countless AI-generated dashboard templates, which this project's own design brief explicitly wanted to avoid.
+- A green-forward "money" palette — thematically on-the-nose for a finance app, but risks visually conflating the brand color with the semantic "positive/income" color used elsewhere in the UI.
+- A cobalt-blue accent (`#3457d5` light / `#6e8bff` dark) paired with a neutral ink/canvas base and semantic success/danger/warning colors kept fully independent of the brand accent.
+**Decision:** Cobalt-blue brand accent, neutral base, semantic colors independent of the accent.
+**Reason:** Avoids the generic purple "AI dashboard" look while keeping the brand accent visually distinct from the semantic colors a finance app needs for income/expense/alert states (a green accent would have made "primary button" and "positive number" look like the same signal).
+**Consequences:** Chart color choices for future phases (Phase 7, Charts & Reports) should still go through the `dataviz` skill's palette process, per `PROJECT_STYLE.md`'s existing instruction, rather than reusing the UI accent color directly for data series — this decision only settles the *UI chrome* palette, not future chart colors.
+
+---
+
+### Decision: `/app` as an honest post-login placeholder, not a preview of the real `/dashboard`
+**Date:** 2026-08-22
+**Context:** Login and Register needed *somewhere* to redirect a user after a successful auth, to prove the end-to-end flow actually works — but the real financial dashboard (`/dashboard`, Phase 4: aggregate balance/income/expense/savings-rate/net-worth view) has no backend yet and is still several phases away.
+**Options considered:**
+- Build a visual-only mockup of the real dashboard using fake/sample data — would look more "finished," but is exactly the kind of non-functional, fabricated-feature mockup this project's protocol forbids, and would need to be fully rebuilt — not just re-skinned — once Phase 4's real aggregation endpoint exists.
+- Skip a post-login destination entirely and just leave the user on the login page after success — technically avoids fabrication, but fails to demonstrate the auth flow actually works end-to-end, and is a worse user experience.
+- A new, honestly-labeled placeholder route (`/app`) that welcomes the user and lists the real product roadmap (Accounts/Transactions/Budgets/Investments/Reports/Notifications) as explicitly "Planned," with zero fake data.
+**Decision:** The third option — `/app`, a real (if intentionally minimal) authenticated page, protected by a new route guard, with an honest empty state.
+**Reason:** Proves the full register/login/session/logout flow works end-to-end against real backend behavior, without fabricating the Phase 4 feature ahead of its backend existing.
+**Consequences:** `/app` and the future real `/dashboard` are two distinct routes for now — whether `/app` eventually redirects to or is replaced by `/dashboard` once Phase 4 ships is an open question, not yet decided (see the corresponding note added to `SITE_MAP.md` in a parallel doc-update pass).
+
+---
+
+### Decision: Session bootstrap re-validates the stored token against the server on every load, rather than trusting a cached user object
+**Date:** 2026-08-22
+**Context:** `AuthContext` needed a strategy for restoring session state after a page reload, given only a JWT persisted in `localStorage` (under the key `'token'`, the same key the pre-existing axios interceptor in `services/api.ts` already reads).
+**Options considered:**
+- Also cache the `user` object itself in `localStorage` alongside the token, and trust it immediately on load — faster perceived load, no extra network request, but risks showing stale/wrong user data, and doesn't detect an expired or server-invalidated token until the next API call fails.
+- Call `GET /api/auth/me` on every load before trusting any user data, treating the token as unverified until the server confirms it.
+**Decision:** The second option — always re-validate via `GET /api/auth/me` on load; only the token is persisted client-side, never a cached user object.
+**Reason:** An expired or otherwise invalid token needs to be caught immediately (clearing it and sending the user to `/login`) rather than surfacing confusing 401s from later API calls; this is a small, one-time cost (one extra request per full page load) in exchange for correctness.
+**Consequences:** There's a brief `'loading'` state on every fresh page load while this check is in flight (handled by `ProtectedRoute` showing a spinner, and by `Login`/`Register` checking `status` before deciding whether to redirect); this is a deliberate three-state (`'loading' | 'authenticated' | 'unauthenticated'`) status model rather than a simple boolean, specifically to distinguish "haven't checked yet" from "checked, and there's no session."

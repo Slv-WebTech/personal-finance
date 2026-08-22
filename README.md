@@ -2,7 +2,7 @@
 
 An enterprise-style full-stack app to manage multiple bank accounts, track income/expenses, budget by category, monitor investments, and view overall financial health from one dashboard.
 
-**Project status:** early development. Phase 0 (scaffolding) is complete; Phase 1 (authentication) is next. See [`docs/DEV_CONTEXT.md`](docs/DEV_CONTEXT.md) for the live state and [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) for the roadmap.
+**Project status:** early development. Authentication (register/login/session) is complete end-to-end — real API plus a working frontend — and a design system with a reusable UI component library is in place. Everything past that (accounts, transactions, budgets, investments, reports, notifications, and the real financial dashboard) is still planned, not built. See [`docs/DEV_CONTEXT.md`](docs/DEV_CONTEXT.md) for the live state and [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) for the roadmap.
 
 ## Documentation
 
@@ -33,6 +33,10 @@ cd server && npm run dev      # http://localhost:4000
 
 # 5. Verify
 curl http://localhost:4000/api/health
+
+# 6. Try it
+# Open http://localhost:5173 — create an account and log in.
+# Everything past login (accounts, transactions, budgets, etc.) is still a placeholder roadmap, not real yet.
 ```
 
 ## Repository layout

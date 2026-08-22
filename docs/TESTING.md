@@ -31,4 +31,4 @@ UI snapshot/visual coverage is not a priority — it's expensive to maintain and
 ## Known untested areas
 - Phase 0 code (health route, DB connection helper, error handler) — still only manually verified (`tsc`, `eslint`, manual `curl`), no automated tests. Low priority to add given how trivial this code is.
 - Everything from Phase 2 onward (accounts, transactions, budgets, investments, dashboard, notifications) — not built yet, so not testable yet.
-- Frontend has zero automated tests — no test runner configured in `client/` yet.
+- Frontend has zero automated tests — no test runner configured in `client/` yet. This now covers real, non-trivial logic worth naming specifically: `AuthContext`'s session-bootstrap logic (restoring/validating a session on load), `Login`'s and `Register`'s form validation and error-mapping logic, and `authService`'s error-normalization logic. All of it has been verified only manually (`tsc -b`, lint, `vite build`) this session, never by an automated test.

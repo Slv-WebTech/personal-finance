@@ -9,13 +9,18 @@ finance-dashboard/
 ├── client/                    # React + TypeScript, built with Vite
 │   ├── src/
 │   │   ├── components/        # Shared, reusable UI components
-│   │   ├── pages/              # Route-level views
-│   │   ├── dashboard/          # Dashboard-specific composite components
-│   │   ├── charts/             # Recharts/Chart.js wrapper components
-│   │   ├── services/           # axios API client modules, one per resource
-│   │   ├── hooks/               # Shared custom hooks (e.g. useAuth)
-│   │   ├── context/             # React Context providers (auth/session)
-│   │   ├── types/                # Shared TS types/interfaces
+│   │   │   ├── ui/             # Design-system primitives (Button, TextField, Card, Alert, Spinner, Badge, Logo)
+│   │   │   ├── layout/         # Composed layout shells (AuthLayout, AppHeader)
+│   │   │   └── ProtectedRoute.tsx  # Route-guard component (routing/auth infra, not shared UI)
+│   │   ├── pages/              # Route-level views (Landing, Login, Register, AppHome, NotFound)
+│   │   ├── dashboard/          # Dashboard-specific composite components (not yet built)
+│   │   ├── charts/             # Recharts/Chart.js wrapper components (not yet built)
+│   │   ├── services/           # axios API client modules, one per resource (api.ts, authService.ts)
+│   │   ├── hooks/               # Shared custom hooks (useAuth.ts)
+│   │   ├── context/             # React Context providers (AuthContext.tsx — auth/session)
+│   │   ├── types/                # Shared TS types/interfaces (auth.ts)
+│   │   ├── styles/               # Design tokens (tokens.css) and global styles (global.css)
+│   │   ├── utils/                # Shared helpers (cx.ts — class-name composition)
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   └── package.json
@@ -37,10 +42,16 @@ This mirrors the product spec's original structure, adapted for TypeScript (`.ts
 
 ## Frontend architecture
 - **Framework:** React + TypeScript, bundled with Vite (chosen over Create React App — see `DECISIONS.md`).
-- **Routing:** React Router (client-side routes per `SITE_MAP.md`). Not yet installed.
+- **Routing:** React Router (`react-router-dom` v7), a real dependency since Phase 0 and in active use — `App.tsx` defines a `<BrowserRouter>`/`<Routes>`/`<Route>` tree for client-side routes per `SITE_MAP.md`.
 - **State management:** React Context + hooks for cross-cutting concerns (auth/session state). Local `useState`/`useReducer` for component-local state. No Redux/Zustand unless a concrete need emerges — avoids an unjustified dependency for a project this size.
-- **Data fetching:** `services/` layer wraps axios; components call service functions, never axios directly. This keeps the JWT-attachment and error-normalization logic in one place.
-- **Component architecture:** presentational components in `components/` and `charts/`, route-level composition in `pages/` and `dashboard/`. Charts are wrapped so pages depend on a stable internal chart API even if the underlying library choice changes later.
+- **Styling:** CSS Modules (`ComponentName.module.css`, co-located next to each component's `.tsx` file) — no new npm dependency, since Vite supports this natively. Conditional class-name composition goes through a tiny shared helper, `utils/cx.ts` (`cx(...classes: Array<string | false | null | undefined>): string`), which replaces the need for a `classnames`/`clsx` package.
+- **Design tokens:** `styles/tokens.css` defines CSS custom properties for the color palette (with a `prefers-color-scheme: dark` override block), plus spacing/radius/shadow/typography/motion scales and a shared focus-ring token. `styles/global.css` holds resets, base element styles, `:focus-visible` treatment, and a reduced-motion override. Both are imported by `index.css`.
+- **Types:** `types/auth.ts` holds the shared auth-related types (`AuthUser`, `AuthResponse`, `RegisterPayload`, `LoginPayload`, `ApiFieldError`) plus an `ApiError` class used to normalize every API failure at the services layer.
+- **Data fetching:** `services/` layer wraps axios; components call service functions, never axios directly. This keeps the JWT-attachment and error-normalization logic in one place. `services/api.ts` is the shared axios instance (request interceptor attaches the JWT from `localStorage`); `services/authService.ts` (`registerUser`/`loginUser`/`fetchCurrentUser`) wraps it and normalizes every failure — network errors included — into the `ApiError` type before it reaches a component. This is the first real instance of the services-layer error-normalization principle actually being exercised in code, not just planned.
+- **Session bootstrap:** on app load, `AuthProvider` (`context/AuthContext.tsx`) checks `localStorage` for a JWT under the key `'token'` (the same key `services/api.ts`'s request interceptor reads/attaches) and, if present, calls `GET /api/auth/me` to validate it before trusting any cached user data; an expired/invalid token is cleared automatically. Only the token is persisted — there is deliberately no separate cached user object in `localStorage`, so the user is always re-fetched fresh from the server on load. `AuthContext.tsx` holds the context object plus the `AuthProvider` component, exposing session state (`user`, a three-state `status: 'loading' | 'authenticated' | 'unauthenticated'`, `login`/`register`/`logout`); the consuming hook lives separately in `hooks/useAuth.ts` so that `AuthContext.tsx` only exports components/context, keeping its exports "component-only" for React Fast Refresh — this is why oxlint's `react/only-export-components` rule flags this file with an expected warning rather than an error.
+- **Route guarding:** `components/ProtectedRoute.tsx` guards auth-gated routes (currently just `/app`) — it renders a loading state while the session check is in flight, redirects to `/login` (preserving the originally-requested destination via router state) if unauthenticated, and renders the nested route otherwise. Wired into `App.tsx` as a parent `<Route>` wrapping `/app`, with `AuthProvider` wrapping the whole `<Routes>` tree.
+- **Component architecture:** `components/ui/` holds design-system primitives (`Button`, `TextField`, `Card`, `Alert`, `Spinner`, `Badge`, `Logo`); `components/layout/` holds composed layout shells (`AuthLayout` — the split-panel shell for Login/Register — and `AppHeader` — the authenticated area's top bar); `components/ProtectedRoute.tsx` is routing/auth infrastructure rather than shared UI, so it sits at the top level rather than nested under `ui/` or `layout/`. Route-level composition lives in `pages/` — `Login.tsx`, `Register.tsx`, `AppHome.tsx` (an intentionally minimal post-login placeholder, not the real Phase 4 aggregate `/dashboard`, which is still unbuilt), and `NotFound.tsx` (the router's catch-all 404) — and in `dashboard/`. Charts are wrapped so pages depend on a stable internal chart API even if the underlying library choice changes later.
+- **Not yet built:** `charts/` and `dashboard/` remain empty — no charting library is installed yet (Recharts remains the locked future choice per `DECISIONS.md`, unchanged), and none of Phase 2-8's backends exist yet either.
 
 ## Backend architecture
 - **Framework:** Node.js + Express + TypeScript.

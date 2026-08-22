@@ -1,36 +1,35 @@
 # Project Style Guide
 
-**Status: this is the standard to build against, not a description of existing UI.** No screens exist yet. Follow this guide from the first component onward; update it if a real implementation reveals a better pattern (and note the change in `DECISIONS.md` if it's a meaningful shift).
+This guide documents the actual, implemented design system for the client. It started as a standard to build against before any screens existed; real screens and a real component library now exist, and this file has been updated to match them (per the original instruction to update it if a real implementation reveals a better pattern). Keep following this guide for new work, and continue updating it here when an implementation detail changes it further.
 
 ## UI Style
 
-- **Visual direction:** clean, minimal fintech dashboard — card-based layout, generous whitespace, data-first (numbers and charts are the content, chrome stays quiet).
-- **Base component: dashboard card**
-  ```css
-  .dashboard-card {
-    border: 1px solid #ddd;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-  }
-  ```
-  Treat this as the baseline card primitive; extend, don't fork it, for variants (e.g. a "stat card," "chart card").
-- **Color system:** not finalized. When charts and UI are actually built, run the `dataviz` skill's palette process rather than hand-picking hex values here — this keeps chart colors accessible and consistent across light/dark. Do not hardcode a color palette into this doc speculatively.
-- **Typography:** system font stack by default (no custom font loaded) unless a specific need arises — avoids an unnecessary asset dependency for a portfolio project.
-- **Spacing:** 20px as the standard card padding (per `.dashboard-card` above); use consistent multiples of 4px/8px for anything else.
-- **Border radius:** 10px on cards; smaller (4–6px) on inputs/buttons/badges to keep a visual hierarchy between containers and controls.
-- **Shadows:** none by default (border-based separation per `.dashboard-card`); introduce shadow only if flat cards prove hard to distinguish from the page background in dark mode.
-- **Buttons / forms / tables / modals / navigation:** no components exist yet — define these concretely as each is first implemented, then move that definition here (not before, to avoid speculative/unused patterns).
-- **Loading / empty / error states:** every data-bearing view (dashboard cards, tables, charts) must have explicit loading, empty, and error states before it's considered done — do not ship a bare spinner-only or blank-on-error view.
-- **Responsive behavior:**
-  ```css
-  @media (max-width: 768px) {
-    .dashboard-card { width: 100%; }
-  }
-  ```
-  768px is the mobile breakpoint per the product spec; cards go full-width below it.
-- **Accessibility expectations:** semantic HTML first (real `<button>`, `<table>`, `<label>` elements), visible focus states, sufficient color contrast (especially for chart colors and alert/error states — verify via the `dataviz` skill's contrast guidance), no color-only signaling for budget-exceeded/alert states (pair with an icon or text).
-- **Animations/transitions:** subtle only (hover/focus states, panel open/close). No animation should be load-bearing for understanding the UI.
+- **Visual direction:** clean, minimal fintech dashboard — card-based layout, generous whitespace, data-first (numbers and charts are the content, chrome stays quiet). Implemented as a restrained neutral base (near-white/near-black surfaces on a slightly off-white/off-black canvas) plus one confident brand accent, chosen deliberately to move away from the old Vite-template default purple/violet (`#aa3bff`) look, which read as generic "AI dashboard" rather than a considered fintech product.
+- **Source of truth:** design tokens live in `client/src/styles/tokens.css` (CSS custom properties on `:root`, with a `prefers-color-scheme: dark` override block) and reusable components live in `client/src/components/ui/*`. Treat those files as the real spec — this doc summarizes them, it doesn't duplicate their exact values. Global resets, the `:focus-visible` outline, and the `prefers-reduced-motion` override live in `client/src/styles/global.css`.
+- **Color system:**
+  - Light mode neutrals: `--color-canvas` (page background), `--color-surface` (card/panel background), `--color-surface-hover`, `--color-border`, `--color-border-strong`, `--color-text-primary`, `--color-text-secondary`, `--color-text-tertiary`, `--color-text-inverse`.
+  - Brand accent: `--color-accent` plus `-hover` / `-active` / `-subtle` / `-border` variants — used for primary actions and focus rings.
+  - Semantic colors: `--color-success`, `--color-danger`, `--color-warning`, each with a paired `-subtle` background. These are deliberately independent of the brand accent so a primary button is never visually confused with a positive/negative number.
+  - Dark mode overrides all of the above with a near-black ink palette and brightened accent/semantic hues for contrast — see `tokens.css` directly for exact values rather than duplicating them here.
+- **Typography:** system font stack retained (no custom font loaded) — `--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Variable', Roboto, Helvetica, Arial, sans-serif` — avoiding an unnecessary font-loading dependency. A full type scale is defined as shorthand `font` custom properties (weight/size/line-height combined): `--text-display` (hero-only), `--text-h1`, `--text-h2`, `--text-h3`, `--text-body-lg`, `--text-body` (default body size), `--text-body-sm`, `--text-label` (form labels/buttons). `--tracking-tight` / `--tracking-tighter` letter-spacing is reserved for large headings only.
+- **Spacing:** 4px base unit, exposed as `--space-1` (4px) through `--space-24` (96px). Card padding uses `--space-4`/`--space-6`/`--space-8` (see Card below) rather than a single fixed value.
+- **Border radius:** `--radius-xs` (6px, tiny controls/badges), `--radius-sm` (8px, inputs/buttons), `--radius-md` (12px, cards), `--radius-lg` (16px, larger panels), `--radius-full` (pills). Cards are 12px (`--radius-md`) — a deliberate small revision upward from this doc's original 10px spec, made during the first real implementation.
+- **Shadows:** `--shadow-sm` / `-md` / `-lg` exist but are used sparingly — surfaces are separated by a 1px `--color-border` by default, not shadow. Shadow is reserved for genuinely floating elements; there are none yet (no modals/dropdowns exist).
+- **Styling approach:** CSS Modules (`ComponentName.module.css`, co-located next to each `.tsx` file) — Vite supports this natively, so no new npm dependency was needed. Conditional class merging goes through a tiny shared helper, `client/src/utils/cx.ts` (`cx(...classes): string`), instead of pulling in a `classnames`/`clsx` package.
+- **Components (`client/src/components/ui/`):** one `.tsx` + one `.module.css` per component.
+  - **Button** — `variant`: `primary` (solid accent, white text) / `secondary` (surface bg, bordered) / `ghost` (transparent, no border) / `danger` (solid danger-color bg). `size`: `sm`/`md`/`lg`. States: default, hover, active/pressed, focus (ring), disabled (dimmed, no pointer events), loading (`isLoading` prop shows an inline `Spinner`, sets `aria-busy`, disables the button, keeps width stable). Supports `leftIcon`/`rightIcon`/`fullWidth`.
+  - **TextField** — a complete labeled form field (label + input + hint-or-error message together, not a bare `<input>`). States: default, hover, focus (accent border + focus ring), error (danger border, message with `role="alert"`, `aria-invalid`, `aria-describedby`), disabled. `type="password"` gets a built-in show/hide toggle (local component state, independent of the `type` prop).
+  - **Card** — flat surface: `--color-surface` background, 1px `--color-border`, `--radius-md`, no shadow. `padding`: `sm`/`md`/`lg` (maps to `--space-4`/`-6`/`-8`).
+  - **Alert** — full-width banner for form-/page-level feedback. `variant`: `error`/`success`/`warning`/`info`, each with a paired icon (never color-only signaling) and the correct ARIA role (`role="alert"` for error/warning, `role="status"` for success/info).
+  - **Spinner** — loading indicator, `currentColor`-based so it inherits the parent's text color (renders white inside a primary Button, etc.); decorative (`aria-hidden`) by default, or accessible (`role="status" aria-live="polite"` + visually-hidden label) when a standalone `label` prop is passed (e.g. a full-page "Checking your session…" loader).
+  - **Badge** — small status pill. `tone`: `neutral`/`accent`/`success`/`warning`. Used today for "Planned" feature-roadmap labels.
+  - **Logo** — the brand mark (a simple ascending-bars glyph in the accent color, replacing the old default Vite-template logo) with an optional "Finance Dashboard" wordmark; also used as the favicon (`client/public/favicon.svg`).
+  - **Layout components (`client/src/components/layout/`):** `AuthLayout` (split-panel shell for Login/Register — brand panel + form panel, collapses to a single column with a compact top brand strip below 768px), `AppHeader` (authenticated-area top bar: logo, current user's name, logout button).
+  - **Tables / modals / navigation:** no components exist yet — define these concretely as each is first implemented, then move that definition here (not before, to avoid speculative/unused patterns).
+- **Loading / empty / error states:** now demonstrated end-to-end — `ProtectedRoute` shows a labeled `Spinner` while checking the session; `Login`/`Register` show `Alert` for request-level errors and per-field `TextField` errors for validation failures, and disable/loading-state their submit button during the request; `AppHome` is a real, deliberately-designed empty state (not a bare spinner or blank screen) for the not-yet-built dashboard; `NotFound.tsx` is a real 404 page. Every future data-bearing view (dashboard cards, tables, charts) must have explicit loading, empty, and error states before it's considered done — do not ship a bare spinner-only or blank-on-error view.
+- **Responsive behavior:** 768px is the mobile breakpoint per the product spec, and it's now actually exercised — `AuthLayout` collapses to one column below it. `Landing.tsx`'s hero/feature grid/CTAs restack and resize below a 640px breakpoint for comfortable mobile touch targets.
+- **Accessibility expectations:** semantic HTML throughout (real `<button>`, `<label>`, `<nav>`, `<header>`, `<main>`, `<footer>`), visible keyboard-focus states via the shared focus-ring token (`--focus-ring`, a `0 0 0 3px var(--color-accent-subtle)` box-shadow, paired with the browser's native `:focus-visible` outline set globally in `global.css`), no color-only signaling for alert/badge states (always paired with an icon or text), proper heading hierarchy (one `<h1>` per page, no skipped levels). This has been built manually to these guidelines and verified via `tsc -b`, lint, and `vite build` only — no automated visual or accessibility testing has been run yet.
+- **Animations/transitions:** subtle only (hover/focus states, panel open/close), via `--ease-out` and `--duration-fast` (120ms) / `--duration-base` (180ms) / `--duration-slow` (260ms) tokens. No animation is load-bearing for understanding the UI. `prefers-reduced-motion: reduce` is handled once, globally, in `global.css` (zeroes out all animation/transition durations) — individual components don't need their own reduced-motion media queries.
 
 ## UX Style
 
