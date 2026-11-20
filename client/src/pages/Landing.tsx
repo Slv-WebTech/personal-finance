@@ -62,7 +62,7 @@ function Landing() {
               Your accounts, spending, budgets, and investments — finally in one place.
             </h1>
             <p className={styles.heroSubtitle}>
-              Personal Finance Dashboard is a manual-entry tracker: you add your accounts and
+              Tallybird is a manual-entry tracker: you add your accounts and
               transactions yourself, and it turns them into a clear, organized view of your
               finances. No bank connections, no automatic syncing — just accurate numbers you
               control.
@@ -83,7 +83,7 @@ function Landing() {
             <div className={styles.sectionHeader}>
               <Badge tone="neutral">Product roadmap</Badge>
               <h2 id="features-heading" className={styles.sectionTitle}>
-                What Personal Finance Dashboard is for
+                What Tallybird is for
               </h2>
               <p className={styles.sectionSubtitle}>
                 Registration and sign-in are live today. The dashboard below is what we&apos;re
@@ -124,7 +124,7 @@ function Landing() {
         <div className={cx(styles.container, styles.footerInner)}>
           <Logo size={20} wordmark className={styles.footerLogo} />
           <p className={styles.footerText}>
-            Personal Finance Dashboard is a portfolio project, built with React, TypeScript, and
+            Tallybird is a portfolio project, built with React, TypeScript, and
             MongoDB.
           </p>
         </div>

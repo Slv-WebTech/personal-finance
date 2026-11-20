@@ -1,9 +1,16 @@
 # Future Features
 
-Backlog beyond the MVP feature set in `PROJECT_PLAN.md`. None of these should be implemented before the core features (Auth through Notifications) reach `IMPLEMENTED` status in `FEATURES.md`, unless the user explicitly reprioritizes.
+Backlog beyond the MVP feature set in `PROJECT_PLAN.md`. Auth through the dashboard summary are done; the remaining core features are Charts & Reports (Phase 7) and Notifications (Phase 8). None of these should be implemented before those reach `IMPLEMENTED` status in `FEATURES.md`, unless the user explicitly reprioritizes.
+
+## Technical roadmap (from `TECHNICAL_DEBT.md`)
+- OpenAPI spec for the REST API; seed/demo data script.
+- Refresh tokens / httpOnly cookies (with CSRF protection) and token revocation.
+- MongoDB multi-document transactions (needs a replica set); integer minor-unit money; timezone-aware budget months.
+- Client-side pagination UI and search for transactions.
+- Verify and CI-build the Docker images; password reset; ISO-4217 currency validation.
 
 ## High Priority
-- **Dark Mode** — Low implementation complexity relative to user-facing value; mostly a CSS variable/theme-token exercise once the base UI exists. Dependency: base UI components must exist first.
+- **Dark Mode (polish)** — Tokens already switch on `prefers-color-scheme: dark`; remaining work is verification and an explicit user toggle.
 - **Bill Reminder System** — Natural extension of the Notifications feature (reuses the same alert infrastructure). Dependency: Notifications.
 - **Multi-Currency Support** — Extends the existing `Account.currency` field into real cross-currency aggregation (conversion rates, display normalization). Dependency: Account Management, Financial Dashboard. Risk: needs a reliable exchange-rate source; adds real complexity to net-worth calculation.
 
@@ -28,4 +35,4 @@ Backlog beyond the MVP feature set in `PROJECT_PLAN.md`. None of these should be
 - **PWA** — Installable/offline support. Reasonable once the core app is stable; not before.
 
 ## Standard practice, not "future features"
-Testing and CI/CD (GitHub Actions) are listed as "enhancement ideas" in the original product spec, but they should be built incrementally alongside each phase (see `TESTING.md`, `PROJECT_SCORE.md` recommendations) rather than deferred as bonus polish.
+Testing and CI (GitHub Actions) were listed as "enhancement ideas" in the original product spec; both now exist (see `TESTING.md`). Continuous deployment is still not set up (`DEPLOYMENT.md`).

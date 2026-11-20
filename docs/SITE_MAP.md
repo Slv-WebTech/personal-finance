@@ -1,6 +1,6 @@
 # Site Map
 
-**Status: PARTIALLY IMPLEMENTED.** `/` (Landing), `/login`, `/register`, `/app` (a placeholder post-auth landing page — see below), and the catch-all 404 (`NotFound`) are real, working routes, verified against `client/src/App.tsx` (`tsc -b`/lint/build all clean). Everything else below — `/dashboard` and everything under it, plus `/forgot-password` and `/admin/users` — remains PLANNED and maps the intended application per `PROJECT_CONTEXT.md`'s application flow (Login → Dashboard → Manage Accounts → Add Transactions → Create Budget → Analyze Spending → Financial Reports); none of it has a backend yet (Phase 2-8 all PLANNED in `PROJECT_PLAN.md`). Keep this file synchronized with `client/` routes as they're built.
+**Status: PARTIALLY IMPLEMENTED.** Real, working routes (verified against `client/src/App.tsx`): `/` (Landing), `/login`, `/register`, `/app` (post-login home with the dashboard snapshot), `/accounts`, `/transactions`, `/budgets`, `/investments`, and the catch-all 404 (`NotFound`). All except `/`, `/login`, `/register` and `*` are behind `ProtectedRoute` (redirect to `/login`). Still PLANNED: `/reports` (Phase 7), `/notifications` (Phase 8), `/settings`, `/profile`, `/forgot-password`, `/admin/users`, and a standalone `/dashboard`. Keep this file synchronized with `client/` routes as they're built.
 
 ```
 Application
@@ -9,13 +9,13 @@ Application
 │   ├── Login (/login)                             [implemented]
 │   ├── Register (/register)                       [implemented]
 │   └── Forgot Password (/forgot-password)        [inferred — not explicit in spec; confirm before building]
-├── App Home (/app)                                [implemented — placeholder-only landing page shown right after login/register; protected route (redirects to /login if unauthenticated); NOT part of the Dashboard subtree below — see Notes]
-├── Dashboard (/dashboard)
+├── App Home (/app)                                [implemented — post-login home: welcome card + "Your snapshot" (dashboard summary) + roadmap links; protected route]
+├── Accounts (/accounts)                           [implemented — protected route; full CRUD]
+├── Transactions (/transactions)                   [implemented — protected route; full CRUD with balance integrity]
+├── Budgets (/budgets)                             [implemented — protected route; month/year picker, live-computed usage]
+├── Investments (/investments)                     [implemented — protected route; portfolio summary, allocation %]
+├── Dashboard (/dashboard)                         [not built — the snapshot lives on /app]
 │   ├── Overview (/dashboard)
-│   ├── Accounts (/accounts)
-│   ├── Transactions (/transactions)
-│   ├── Budgets (/budgets)
-│   ├── Investments (/investments)
 │   ├── Reports (/reports)
 │   ├── Notifications (/notifications)
 │   ├── Settings (/settings)
@@ -30,12 +30,12 @@ Application
 | `/login` | Login | Real form wired to `POST /api/auth/login`; redirects to `/app` on success or if already authenticated | Public | `Login` | `POST /api/auth/login` | IMPLEMENTED |
 | `/register` | Register | Real form wired to `POST /api/auth/register`; client-side password/confirm-password check plus server-side field-error mapping; same redirect behavior as Login | Public | `Register` | `POST /api/auth/register` | IMPLEMENTED |
 | `/forgot-password` | Forgot Password | Password reset request | Public | `ForgotPasswordForm` | Not yet specced | PLANNED (unconfirmed) |
-| `/app` | App Home | Landing spot right after login/register; honest placeholder — welcome message + a "what's coming" roadmap list (Accounts/Transactions/Budgets/Investments/Reports/Notifications, each tagged "Planned"). **Not the Dashboard Overview below** — see Notes | Customer (any authenticated user) | `AppHome`, `ProtectedRoute` | — | IMPLEMENTED — placeholder only, not the real Phase 4 dashboard |
-| `/dashboard` | Overview | Total balance, income/expense, savings rate, budget usage, net worth | Customer, Advisor, Admin | `DashboardCards`, `IncomeExpenseChart` | `GET /api/dashboard/summary` | PLANNED |
-| `/accounts` | Accounts | List/create/edit/delete bank accounts | Customer | `AccountList`, `AccountForm` | `GET/POST/PUT/DELETE /api/accounts` | PLANNED |
-| `/transactions` | Transactions | List/filter/create/edit/delete transactions | Customer | `TransactionTable`, `TransactionForm` | `GET/POST/PUT/DELETE /api/transactions` | PLANNED |
-| `/budgets` | Budgets | Create monthly budgets, view usage | Customer | `BudgetList`, `BudgetUsageChart` | `GET/POST/PUT/DELETE /api/budgets` | PLANNED |
-| `/investments` | Investments | Track holdings, profit/loss, allocation | Customer | `InvestmentList`, `AllocationChart` | `GET/POST/PUT/DELETE /api/investments` | PLANNED |
+| `/app` | App Home | Landing spot after login/register: welcome card, "Your snapshot" (per-currency balances, this month's income/expenses, investment value), and a roadmap list linking to the built pages with Reports/Notifications marked as not built | Customer (any authenticated user) | `AppHome`, `ProtectedRoute` | `GET /api/dashboard/summary` | IMPLEMENTED |
+| `/dashboard` | Overview | Fuller dashboard: savings rate, budget usage, net worth, charts | Customer, Advisor, Admin | `DashboardCards`, `IncomeExpenseChart` | `GET /api/dashboard/summary` (exists, smaller than this) | PLANNED (Phase 7) |
+| `/accounts` | Accounts | List/create/edit/delete bank accounts, with loading/empty/error states | Customer (protected route) | `Accounts` (uses `AppShell`, `Table`, `Modal`) | `GET/POST /api/accounts`, `GET/PUT/DELETE /api/accounts/:id` | IMPLEMENTED |
+| `/transactions` | Transactions | List/filter (account, type — client-side over the first 200)/create/edit/delete transactions incl. transfers with a destination account, with loading/empty/error states; table collapses to stacked cards under 640px | Customer (protected route) | `Transactions` (uses `AppShell`, `Table`, `Modal`, `Select`) | `GET/POST /api/transactions`, `GET/PUT/DELETE /api/transactions/:id` | IMPLEMENTED |
+| `/budgets` | Budgets | Create/edit/delete monthly category budgets; month/year picker; live-computed usage via a progress bar per budget | Customer (protected route) | `Budgets` (uses `AppShell`, `Card` grid, `ProgressBar`, `Modal`) | `GET/POST /api/budgets`, `GET/PUT/DELETE /api/budgets/:id` | IMPLEMENTED |
+| `/investments` | Investments | Create/edit/delete holdings; portfolio summary (total value, profit/loss); allocation progress bar per holding | Customer (protected route) | `Investments` (uses `AppShell`, `Card` grid, `ProgressBar`, `Modal`) | `GET/POST /api/investments`, `GET/PUT/DELETE /api/investments/:id` | IMPLEMENTED |
 | `/reports` | Reports | Charts + PDF/Excel export | Customer | `ReportCharts`, `ExportButton` | `GET /api/dashboard/summary`, transaction/budget/investment endpoints | PLANNED |
 | `/notifications` | Notifications | Alert feed | Customer | `NotificationList` | `GET /api/notifications` | PLANNED |
 | `/settings` | Settings | Account preferences (currency, theme, etc.) | Customer | — | Not yet specced | PLANNED |
@@ -46,4 +46,4 @@ Application
 ## Notes
 - Advisor-specific views are not mapped — the product scope of what a Financial Advisor sees (see open question in `PROJECT_PLAN.md`) needs to be settled before routes are added for it.
 - `/forgot-password` and `/admin/*` are marked "inferred" because they aren't explicitly in the product spec; don't build them on the assumption they're required — confirm scope first.
-- `/app` vs. the future `/dashboard`: `/app` is an intentionally minimal, honest placeholder — a page for an authenticated user to land on until the real Phase 4 Overview page (`/dashboard`) exists. They are not the same feature and shouldn't be conflated. Whether `/app` eventually redirects to `/dashboard`, gets replaced by it, or continues to serve some other purpose once Phase 4 ships is an open question, not a decided plan.
+- `/app` vs. a future `/dashboard`: `/app` currently hosts the snapshot. Whether a richer `/dashboard` (Phase 7) replaces it, or `/app` redirects there, is an open question, not a decided plan.

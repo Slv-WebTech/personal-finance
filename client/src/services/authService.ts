@@ -1,35 +1,6 @@
-import axios from 'axios'
 import { api } from './api'
-import {
-  ApiError,
-  type ApiFieldError,
-  type AuthResponse,
-  type AuthUser,
-  type LoginPayload,
-  type RegisterPayload,
-} from '../types/auth'
-
-interface RawFieldIssue {
-  path: Array<string | number>
-  message: string
-}
-
-function toApiError(err: unknown): ApiError {
-  if (axios.isAxiosError(err)) {
-    const status = err.response?.status ?? 0
-    const message: string =
-      err.response?.data?.error?.message ?? 'Something went wrong. Please try again.'
-    const details = err.response?.data?.error?.details
-    const fieldErrors: ApiFieldError[] = Array.isArray(details)
-      ? details.map((issue: RawFieldIssue) => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-        }))
-      : []
-    return new ApiError(message, status, fieldErrors)
-  }
-  return new ApiError('Something went wrong. Please try again.', 0)
-}
+import { toApiError } from './httpError'
+import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from '../types/auth'
 
 export async function registerUser(payload: RegisterPayload): Promise<AuthResponse> {
   try {

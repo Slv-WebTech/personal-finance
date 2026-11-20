@@ -51,3 +51,64 @@ Human-readable development history. Concise entries — date, what changed, why 
 - Work split across four parallel subagents (UI primitives / auth plumbing / Landing / auth pages), each given fixed prop contracts up front so they could build concurrently, then integrated (routing, cleanup, verification) afterward.
 - Explicitly not built: any UI for Accounts/Transactions/Budgets/Investments/Reports/Notifications, or the real aggregate dashboard — all still blocked on their own backend phases (2-8, still `PLANNED`).
 - Next: Phase 2 — Account Management.
+
+## 2026-08-22 — Phase 2: Account Management
+- Backend and frontend built in parallel against a fixed contract (mirroring the earlier UI-pass approach), then integrated: `server/src/models/Account.ts`, `createAccountSchema`/`updateAccountSchema` in `validators.ts`, `accounts.controller.ts` (`list`/`create`/`getOne`/`update`/`remove`), `accounts.routes.ts` (mounted at `/api/accounts`, `requireAuth` on every route — first real use of the ownership-filtering pattern: every query scoped to `{ _id, userId }` together, cross-user access returns 404 not 403, deliberately never distinguishing "doesn't exist" from "isn't yours"). 21 Vitest tests passing (up from 10).
+- Frontend: `client/src/pages/Accounts.tsx` — full list/create/edit/delete UI at a new protected `/accounts` route, with loading/empty/error states, reachable from a new nav. Added three reusable primitives to `components/ui/`: `Modal` (portal dialog, Escape/backdrop-close), `Table`, `Select`. Added `components/layout/AppShell.tsx` (header + nav + content) and refactored `AppHome.tsx` to use it instead of rendering the header directly.
+- Extracted `ApiError`/`ApiFieldError` and the axios-error-normalizing `toApiError` helper out of the auth-specific files into `client/src/types/api.ts` + `client/src/services/httpError.ts`, so future resource services (transactions, budgets, investments, ...) can reuse them instead of each redefining the same logic. `types/auth.ts` now re-exports `ApiError` for backward compatibility with existing imports.
+- **Caught and fixed a real bug before shipping it:** the first draft of `updateAccountSchema` was `createAccountSchema.partial()`. Verified empirically (`node -e` against the real installed Zod version) that Zod re-applies a field's `.default(...)` when that field is omitted, even under `.partial()` — so a PUT that only renamed an account would have silently reset its `balance` to 0 and `status` to `active`. Fixed by defining the update schema independently with plain `.optional()` fields and no defaults; added a dedicated regression test. Logged as a standing rule in `DECISIONS.md` for every future resource's update endpoint.
+- Verified: server `tsc`/`eslint`/`vitest` (21/21) clean; client `tsc -b`/`lint`/`vite build` clean.
+- Next: Phase 3 — Transaction Management (flagged correctness risk: account balance must update correctly on transaction create/edit/delete, not just create — see `TECHNICAL_DEBT.md`).
+
+## 2026-08-22 — Phase 3: Transaction Management
+- Backend written directly (not delegated) given the flagged balance-integrity risk: `server/src/models/Transaction.ts`, a pure unit-tested `balanceDelta(type, amount)` function (`server/src/utils/balance.ts` — income is `+amount`, expense/transfer/investment are all `-amount`), `createTransactionSchema`/`updateTransactionSchema`, `transactions.controller.ts`, `transactions.routes.ts` (mounted at `/api/transactions`).
+- Balance updates use an atomic single-document `$inc` on the affected `Account`(s) with a compensating reverse `$inc` if the paired `Transaction` write fails — this project's local MongoDB is a standalone instance, not a replica set, so real multi-document transactions aren't available; logged as an explicit, accepted trade-off in `DECISIONS.md`/`TECHNICAL_DEBT.md`, with converting to a replica set flagged as the clear future improvement.
+- Decided (and documented) that `transfer` and `investment` transactions both decrease the account balance, same as `expense` — the schema has only one `accountId` field (no second "destination account"), so a transfer is modeled as money leaving this app's tracked balance, not moving between two tracked accounts. See `DECISIONS.md`.
+- 22 new tests covering every balance-integrity edge case by asserting the actual resulting balance, not just HTTP status: amount-only change, type change (net delta, not just the new delta), moving a transaction to a different owned account (old account reversed, new account applied), rejecting a move to an unowned account with both balances verified untouched, delete reversal, ownership/auth on every route.
+- **Found and fixed a real test-infrastructure bug:** adding this third integration test file surfaced that Vitest was running test files concurrently against the one shared `personal-finance-test` database with overlapping hardcoded fixture emails — causing duplicate-key races and collections being wiped mid-test by another file's `beforeEach`. Fixed via `fileParallelism: false` in `server/vitest.config.ts`, benefiting every future test file. Total suite: 43/43 passing.
+- Frontend: `client/src/pages/Transactions.tsx` — list with account/type filters, create/edit/delete against the design-system component library, reachable from a new `AppShell` nav item; `AppHome.tsx`'s "Transactions" roadmap entry now links there instead of showing "Planned."
+- Consciously resolved the pre-flagged "duplicate transaction prevention" question from `TECHNICAL_DEBT.md`: the create form's submit-guard prevents accidental double-submission; deliberately no server-side idempotency key or value-matching heuristic, since two genuinely identical transactions are a normal, valid occurrence, not a bug to block.
+- Next: Phase 4 — Financial Dashboard (depends on Transactions, Budgets, Investments — Budgets/Investments aren't built yet, so Phase 4 is not next; see `PROJECT_PLAN.md` for the actual dependency order — Phase 5 or 6 first).
+
+## 2026-08-22 — Phase 5: Budget Management
+- Backend: `server/src/models/Budget.ts`, pure unit-tested `utils/budgetUsage.ts`, `createBudgetSchema`/`updateBudgetSchema`, `budgets.controller.ts`, `budgets.routes.ts` (`/api/budgets`). Usage (`spent`/`limit`/`remaining`/`percentUsed`/`isOverBudget`) is computed live from transactions on every read, never stored. Duplicate category + month + year rejected case-insensitively (controller), with a unique compound index as a backstop.
+- Frontend: `/budgets` — month/year picker, `Card` grid with the new `ProgressBar` primitive, create/edit/delete. 17 new tests (suite then 60).
+
+## 2026-08-22 — Phase 6: Investment Tracker
+- Backend: `Investment` model, pure unit-tested `utils/investmentReturns.ts` (profit/loss, percentage, holding value, portfolio allocation), validators, controller, `/api/investments`. `currentValue` is per-unit, matching `purchasePrice`. 18 new tests (suite then 78).
+- Frontend: `/investments` — portfolio summary, per-holding allocation bar, create/edit/delete.
+
+## 2026-11-20 — QA pass, security hardening, dashboard, tooling
+Full QA findings are in `QA-REPORT.md`.
+
+### Added
+- `GET /api/dashboard/summary` (per-currency balances excluding closed accounts, this month's income/expense/net, investment totals) and a "Your snapshot" card on `/app`.
+- Transfers between two tracked accounts via an optional `toAccountId` on transactions (two-leg, reversed correctly on edit/delete).
+- Transaction list pagination: `page`, `limit` (default 200, max 500) and a `pagination` object in the response.
+- Client test runner (Vitest + Testing Library): `Alert`, `Modal`, `cx` tests (6 tests).
+- GitHub Actions CI (`.github/workflows/ci.yml`): server type-check/lint/tests with a `mongo:7` service; client lint/tests/build.
+- `server/Dockerfile`, `client/Dockerfile` + `nginx.conf`, and a compose `app` profile (full stack in Docker; not yet verified on a machine with a working Docker engine).
+- `qa-hardening.routes.test.ts`, `errorHandler.test.ts`, dashboard tests; server suite now 99 tests.
+- Product name **Tallybird** adopted in the UI and docs (repo slug unchanged).
+
+### Changed
+- Account `balance` is settable only on create; `PUT /api/accounts/:id` rejects it (400). Balances move only through transactions.
+- Deleting an account that has transactions (as source or destination) returns 409; close it instead.
+- Frozen/closed accounts reject new transactions (409); edits only require newly referenced accounts to be active.
+- `GET /api/budgets` computes usage for all budgets with a single aggregation (was one query per budget; ~260 ms to ~93 ms on 20k transactions).
+- `AuthContext` only clears the stored token on 401/404 from `/auth/me`, so network errors, 429s and 5xx don't log the user out.
+- Mobile (< 640px): tables render as stacked cards; header and nav fit.
+- `docker-compose.yml`: MongoDB bound to `127.0.0.1`; `docker compose up -d` still starts only MongoDB.
+
+### Security
+- helmet headers; rate limit of 20 requests / 15 min / IP on `/api/auth/login` and `/register` (429); JSON body limit 100 kb; generic `500` responses (no internals); `JWT_SECRET` must be >= 32 characters or the server refuses to start; graceful shutdown on SIGINT/SIGTERM.
+- Input bounds: max lengths, money <= 1e12 with <= 2 decimals, currency `^[A-Z]{3}$`, quantity <= 1e12, password 8-72 characters.
+- Login timing equalised for unknown emails (dummy bcrypt compare).
+
+### Fixed
+- Float drift in balances: amounts limited to two decimals and balance updates use an aggregation-pipeline `$round` to cents.
+- Orphaned transactions when deleting an account (now refused).
+- Transactions accepted on frozen/closed accounts.
+- Modal focus escaped the dialog and was not restored on close (focus trap + restore added).
+- Rate limiter was counting `/auth/me`, and the client logged users out on any `/me` error.
+- Budgets list N+1 query (see Changed).
