@@ -6,3 +6,25 @@
 Thumbs.db
 
 # Each app manages its own node_modules/dist/.env — see client/.gitignore and server/.gitignore
+
+# Environment & secrets (only *.env.example with placeholders is tracked)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Build output, logs, coverage, local data
+node_modules
+dist
+dist-ssr
+build
+coverage
+*.log
+*.tsbuildinfo
+mongo-data/
+*.dump
+
+# Local tooling
+.claude/
+

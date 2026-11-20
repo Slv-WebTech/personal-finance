@@ -4,11 +4,34 @@ services:
     container_name: personal-finance-mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-data:/data/db
     environment:
       MONGO_INITDB_DATABASE: personal-finance
+
+  # Full-stack mode: `JWT_SECRET=<32+ random chars> docker compose --profile app up --build`
+  # Plain `docker compose up -d` still starts only MongoDB for local development.
+  server:
+    profiles: ["app"]
+    build: ./server
+    restart: unless-stopped
+    depends_on: [mongo]
+    ports:
+      - "4000:4000"
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/personal-finance
+      JWT_SECRET: ${JWT_SECRET:-}
+      CORS_ORIGIN: http://localhost:8080
+      PORT: "4000"
+
+  client:
+    profiles: ["app"]
+    build: ./client
+    restart: unless-stopped
+    depends_on: [server]
+    ports:
+      - "8080:80"
 
 volumes:
   mongo-data:
