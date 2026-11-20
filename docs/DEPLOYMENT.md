@@ -1,35 +1,53 @@
 # Deployment
 
-**Status: nothing is deployed to production.** Local development infrastructure is set up (see below); this section documents the target production deployment plan for when there's a real feature to deploy.
+**Status: nothing is deployed to production.** Local development and a Docker Compose full-stack mode exist; the Docker mode has **not yet been verified on a machine with a working Docker engine** (the Dockerfiles and compose profile were written and reviewed but not built end-to-end). Treat it as untested until someone runs it.
 
 ## Local development
-- **MongoDB:** runs via Docker (`docker-compose.yml` at the repo root, `mongo:7` image, named volume `mongo-data` for persistence, exposed on `localhost:27017`). Start with `docker compose up -d`, stop with `docker compose down` (add `-v` only if you intend to wipe local data — that's destructive).
-- **Client/server:** run directly with `npm run dev` in each folder (see `README.md` / `DEV_CONTEXT.md` for exact commands) — no containerization for the apps themselves in development.
-- Verified 2026-08-14: server connects to the Dockerized MongoDB successfully (`GET /api/health` returned `database: "connected"`).
+- **MongoDB only:** `docker compose up -d` at the repo root starts `mongo:7` (container `personal-finance-mongo`, named volume `mongo-data`, published on `127.0.0.1:27017` only — not reachable from other machines). Stop with `docker compose down` (add `-v` only if you intend to wipe local data — destructive).
+- **Client/server:** run directly with `npm run dev` in `server/` (port 4000) and `client/` (port 5173). Copy `server/.env.example` to `server/.env` and set `JWT_SECRET` to a random value of **at least 32 characters** — the server refuses to start otherwise.
+- Tests need MongoDB too (`cd server && npm test`; override with `TEST_MONGODB_URI`) — see `TESTING.md`.
+
+## Docker full-stack mode (unverified)
+```
+JWT_SECRET=<32+ random characters> docker compose --profile app up --build
+```
+- `server` (built from `server/Dockerfile`) listens on `http://localhost:4000`, uses `MONGODB_URI=mongodb://mongo:27017/personal-finance` and `CORS_ORIGIN=http://localhost:8080`.
+- `client` (built from `client/Dockerfile`, static build served by nginx using `client/nginx.conf`) is at `http://localhost:8080`.
+- Plain `docker compose up -d` (no profile) still starts only MongoDB.
+- `JWT_SECRET` defaults to empty in compose, so the server will fail fast if you forget it. Never commit a real secret.
+- **Caveat:** the client bundle bakes in `VITE_API_URL` at build time (default `http://localhost:4000/api`); `client/Dockerfile` exposes it as the build argument `VITE_API_URL`, so a deployment on another host needs `--build-arg VITE_API_URL=...`. Not yet verified.
 
 ## Source control
-- **Remote:** `origin` → `git@github-personal:Slv-WebTech/personal-finance.git` (private GitHub repo, created 2026-08-17). Pushed over SSH via the `github-personal` host alias in `~/.ssh/config` — **not** the default `github.com` host on this machine, which is mapped to a different (work) SSH key.
-- **Commit identity:** set locally for this repo (`git config user.name`/`user.email`, not global) to `Slv-WebTech <70682890+Slv-WebTech@users.noreply.github.com>` — keeps the repo's authorship tied to the personal GitHub account rather than whatever identity is globally configured on the machine. Commits in this repo never include a `Co-Authored-By: Claude` trailer.
+- **Remote:** `origin` → `git@github-personal:Slv-WebTech/personal-finance.git` (private GitHub repo). Pushed over SSH via the `github-personal` host alias in `~/.ssh/config` — **not** the default `github.com` host on this machine, which is mapped to a different (work) SSH key.
+- **Commit identity:** set locally for this repo (not global) to `Slv-WebTech <70682890+Slv-WebTech@users.noreply.github.com>`.
 
 ## Production targets (not yet set up)
 | Component | Platform | Notes |
 |---|---|---|
-| Frontend (`client/`) | Vercel | Static build via `vite build`; connect repo for auto-deploy on push. |
-| Backend (`server/`) | Render or Railway | Long-running Node process; final platform choice deferred to when this is actually set up — no code-level difference between the two. |
-| Database | MongoDB Atlas | Free-tier cluster; production swaps the local Docker Mongo for this — same `MONGODB_URI` env var, different value. |
+| Frontend (`client/`) | Vercel (or the nginx image) | Static build via `vite build`; set `VITE_API_URL` at build time. |
+| Backend (`server/`) | Render or Railway (or the Docker image) | Long-running Node process; final platform choice deferred. |
+| Database | MongoDB Atlas | Free-tier cluster; same `MONGODB_URI` variable. A replica-set deployment would also unlock multi-document transactions (see `TECHNICAL_DEBT.md`). |
 
 ## Environment variables (server)
 | Variable | Purpose |
 |---|---|
-| `MONGODB_URI` | MongoDB Atlas (or local) connection string |
-| `JWT_SECRET` | Secret used to sign/verify JWTs |
-| `PORT` | Server port |
-| `CORS_ORIGIN` | Deployed frontend origin, for CORS restriction (see `ARCHITECTURE.md` security boundaries) |
+| `MONGODB_URI` | MongoDB connection string. If unset the server starts but skips the DB connection (warning logged) |
+| `JWT_SECRET` | Secret used to sign/verify JWTs. **Required, >= 32 characters**, must not be the `.env.example` placeholder; startup fails otherwise |
+| `PORT` | Server port (default 4000) |
+| `CORS_ORIGIN` | Allowed frontend origin (default `http://localhost:5173`) |
+| `TEST_MONGODB_URI` | Tests only: overrides the test database URI |
 
-None of these are provisioned yet. Set via each platform's secret store in production — never commit a real `.env`; only commit `server/.env.example` with placeholder values.
+Client: `VITE_API_URL` (build time; default `http://localhost:4000/api`). Set secrets via each platform's secret store in production — never commit a real `.env`.
+
+## Production checklist (before a first real deployment)
+- Serve over HTTPS only (the 7-day JWT travels in an `Authorization` header and lives in `localStorage`).
+- Set `CORS_ORIGIN` to the exact frontend origin; use a strong random `JWT_SECRET`.
+- If behind a reverse proxy/load balancer, configure Express `trust proxy` so the login/register rate limiter (20 requests / 15 min / IP) keys on the real client IP. This is not configured today.
+- Do not expose MongoDB publicly; use Atlas network allow-lists or a private network.
+- Verify the Docker images build and run (first item above).
 
 ## CI/CD
-Not set up. Planned: a GitHub Actions workflow running lint + type-check + test (a real test suite exists as of Phase 1 — see `TESTING.md`) on pull requests, before any deploy step. This is listed as a "bonus feature" in the original product spec, but should be treated as standard practice now that a remote git repository exists — see `FUTURE_FEATURES.md`.
+CI exists: `.github/workflows/ci.yml` runs type-check, lint, tests (server with a `mongo:7` service) and the client build on every push and PR — see `TESTING.md`. There is no CD step (nothing deploys automatically) and CI does not build the Docker images.
 
 ## Current state
-A git repository exists with a remote on GitHub (`Slv-WebTech/personal-finance`, private) and local MongoDB running via Docker. No hosting accounts (Vercel/Render/Railway/Atlas) are connected, and no production build has ever been deployed. This section will be rewritten with real URLs and verified deploy steps once a first deployment actually happens — do not list a deployed URL here until it's confirmed live.
+A git repository with a private GitHub remote, CI, local MongoDB via Docker, and an unverified full-stack Docker profile. No hosting accounts (Vercel/Render/Railway/Atlas) are connected and no build has been deployed. Do not list a deployed URL here until it is confirmed live.

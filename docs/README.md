@@ -2,14 +2,16 @@
 
 This directory is the durable source of truth for the project. If the conversation history that produced these docs is lost, this directory alone should be enough for a new developer or AI agent to understand the project and continue it correctly.
 
-**Project status as of 2026-08-14: early development.** Phase 0 scaffolding (client + server, both verified runnable), a local git repository, and local MongoDB (via Docker) are done. No product features are implemented yet — Phase 1 (Authentication) is next. See `PROJECT_PLAN.md` and `DEV_CONTEXT.md` for the live state.
+> **Product name: Tallybird** — "Your money, tallied in one place." (The GitHub repo slug stays `personal-finance`.)
+
+**Project status as of 2026-11-20: working MVP, not deployed.** Authentication, accounts, transactions (incl. transfers), budgets, investments and a dashboard summary are implemented end-to-end (API, UI and tests: 99 server + 6 client, CI on GitHub Actions). Reports & charts (Phase 7) and notifications (Phase 8) are not built. See `PROJECT_PLAN.md` and `DEV_CONTEXT.md` for the live state and `QA-REPORT.md` for the latest QA/security pass.
 
 ## Reading order for a new agent/developer
 
 1. `PROJECT_CONTEXT.md` — what this project is and why
 2. `DEV_CONTEXT.md` — current state, in-progress work, next action
 3. `PROJECT_PLAN.md` — roadmap (Completed / In Progress / Next / Later / Blocked)
-4. `ARCHITECTURE.md` — how the system is (to be) built
+4. `ARCHITECTURE.md` — how the system is built
 5. `PROJECT_STYLE.md` — UI/UX/code conventions to follow
 6. Everything else, as needed for the task at hand
 
@@ -31,8 +33,9 @@ This directory is the durable source of truth for the project. If the conversati
 | `DECISIONS.md` | ADR-style log of significant technical decisions |
 | `API_DOCUMENTATION.md` | REST endpoint reference |
 | `DATABASE.md` | MongoDB collection schemas and indexes |
-| `TESTING.md` | Testing strategy and commands |
-| `DEPLOYMENT.md` | Deployment targets and process |
+| `TESTING.md` | Testing strategy, commands and CI |
+| `QA-REPORT.md` | 2026-11-20 QA / security / performance pass: findings and fixes |
+| `DEPLOYMENT.md` | Local run, Docker full-stack mode (unverified), deployment targets |
 | `CHANGELOG.md` | Human-readable development history |
 | `INTERVIEW_GUIDE.md` | Interview prep, populated as real work lands |
 
