@@ -1,3 +1,6 @@
+export type { ApiFieldError } from './api'
+export { ApiError } from './api'
+
 export type UserRole = 'customer' | 'advisor' | 'admin'
 
 export interface AuthUser {
@@ -21,21 +24,4 @@ export interface RegisterPayload {
 export interface LoginPayload {
   email: string
   password: string
-}
-
-export interface ApiFieldError {
-  path: string
-  message: string
-}
-
-export class ApiError extends Error {
-  status: number
-  fieldErrors: ApiFieldError[]
-
-  constructor(message: string, status: number, fieldErrors: ApiFieldError[] = []) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-    this.fieldErrors = fieldErrors
-  }
 }

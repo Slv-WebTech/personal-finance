@@ -36,9 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser)
         setStatus('authenticated')
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (cancelled) return
-        localStorage.removeItem('token')
+        // Only a rejected token (401) ends the session; a network blip, 429 or
+        // 5xx must not log the user out.
+        const status = (err as { status?: number })?.status
+        if (status === 401 || status === 404) {
+          localStorage.removeItem('token')
+        }
         setStatus('unauthenticated')
       })
 
